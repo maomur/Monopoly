@@ -4,7 +4,7 @@
   --color-mar: #0B5CAD;
   --color-mar-deep: #073B73;
   --color-cel: #4FC3E8;
-  --color-terracota: #C8553D;
+  --color-terracota: #B0442D;
   --color-sol: #FFC930;
   --color-arena: #FBF3E4;
   --color-olivo: #2E8B57;
@@ -21,3 +21,16 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
+
+/* Animaciones mínimas (el diseño completo llegará después) */
+@keyframes sheet-in { from { transform: translateY(24px); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes toast-in { from { transform: translateY(-8px); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes card-flip { from { transform: perspective(800px) rotateY(90deg) } to { transform: perspective(800px) rotateY(0) } }
+.sheet-in { animation: sheet-in 180ms ease-out }
+.toast-in { animation: toast-in 180ms ease-out }
+.card-flip { animation: card-flip 380ms ease-out }
+@media (prefers-reduced-motion: reduce) {
+  .sheet-in, .toast-in, .card-flip { animation: none }
+}
+.board-scroller { -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
+button { -webkit-tap-highlight-color: transparent; }
