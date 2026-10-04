@@ -238,3 +238,8 @@ button { -webkit-tap-highlight-color: transparent; }
 /* Acciones dentro del tablero (horizontal): botones algo más compactos */
 .hud-actions button { min-height: 2.4rem; font-size: .95rem }
 .hud-actions .space-y-2 > * + * { margin-top: .35rem }
+
+/* Horizontal en móvil durante la partida: la página no se desplaza (está fijada a la pantalla) */
+@media (orientation: landscape) and (max-height: 600px) {
+  html.in-game, html.in-game body { height: 100%; overflow: hidden; overscroll-behavior: none }
+}

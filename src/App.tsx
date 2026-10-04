@@ -14,6 +14,7 @@ import { Panels } from './ui/Panels'
 import { DecisionPopups, LandingPopup } from './ui/popups/GamePopups'
 import { Setup } from './ui/Setup'
 import { useT } from './ui/useT'
+import { LANDSCAPE_QUERY } from './ui/useLandscape'
 import { Sheet } from './ui/primitives'
 
 function Toast() {
@@ -90,6 +91,10 @@ function GameScreen() {
   // La barra de acciones es fija en móvil y su altura varía: reservamos ese hueco al final de la página
   const bar = useRef<HTMLDivElement>(null)
   useEffect(() => {
+    document.documentElement.classList.add('in-game')
+    return () => document.documentElement.classList.remove('in-game')
+  }, [])
+  useEffect(() => {
     const el = bar.current
     if (!el) return
     const ro = new ResizeObserver(() => {
@@ -99,7 +104,7 @@ function GameScreen() {
     return () => ro.disconnect()
   }, [])
   return (
-    <div className="min-h-dvh pb-[calc(var(--bar-h,11rem)+1rem)] lg:pb-4 land:h-dvh land:min-h-0 land:overflow-hidden land:pb-0">
+    <div className="min-h-dvh pb-[calc(var(--bar-h,11rem)+1rem)] lg:pb-4 land:fixed land:inset-0 land:min-h-0 land:overflow-hidden land:pb-0">
       <Header className="land:hidden" />
       <main className="mx-auto max-w-6xl lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-4 lg:px-4 land:flex land:h-full land:max-w-none land:gap-0 land:px-0">
         {/* Horizontal: el tablero ocupa toda la altura a la izquierda */}
@@ -135,7 +140,10 @@ export default function App() {
   // transiciones hasta que se estabiliza para que las fichas no "persigan" su sitio
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
+    const land = window.matchMedia(LANDSCAPE_QUERY)
     const onResize = () => {
+      // En horizontal la partida ocupa la pantalla fija: quitamos el desplazamiento heredado de vertical
+      if (land.matches) window.scrollTo(0, 0)
       document.documentElement.classList.add('resizing')
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => document.documentElement.classList.remove('resizing'), 600)
