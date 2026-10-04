@@ -237,8 +237,8 @@ export const sfx = {
   step() {
     const c = ready(); if (!c) return
     stepCount++
-    tick(c, { f: 1500 + (stepCount % 5) * 90, vol: 0.045 })
-    soft(c, { f: penta(stepCount % 5, 1), dur: 0.09, vol: 0.022, reverb: 0.15 })
+    tick(c, { f: 1500 + (stepCount % 5) * 90, vol: 0.0225 })
+    soft(c, { f: penta(stepCount % 5, 1), dur: 0.09, vol: 0.011, reverb: 0.15 })
   },
 
   /** Dados: barrido de aire con granos digitales y aterrizaje en dos golpes suaves */
