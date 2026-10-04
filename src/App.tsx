@@ -108,7 +108,7 @@ function GameScreen() {
       <Header className="land:hidden" />
       <main className="mx-auto max-w-6xl lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-4 lg:px-4 land:flex land:h-full land:max-w-none land:gap-0 land:px-0">
         {/* Horizontal: el tablero ocupa toda la altura a la izquierda */}
-        <div className="lg:sticky lg:top-16 lg:self-start land:static land:h-full land:w-full land:py-1.5 land:pl-[max(0.375rem,env(safe-area-inset-left))] land:pr-[max(0.375rem,env(safe-area-inset-right))]">
+        <div className="lg:sticky lg:top-16 lg:self-start land:static land:h-full land:w-full land:py-1 land:pl-[max(0.25rem,calc(env(safe-area-inset-left)*0.5))] land:pr-[max(0.25rem,calc(env(safe-area-inset-right)*0.5))]">
           <div className="mx-auto w-full max-w-[min(100%,calc(100dvh-5rem))] land:h-full land:max-w-none">
             <Board />
           </div>
