@@ -8,7 +8,7 @@ import {
   netWorth, ownableTile, ownsFullGroup, rentFor, tilesOwnedBy, unmortgageCost,
 } from './queries'
 import { nextRandom } from './rng'
-import type { GameEvent, GameState, LogEntry, ResumePhase } from './state'
+import type { GameEvent, GameState, LandOutcome, LogEntry, ResumePhase } from './state'
 import { type DeckId, isOwnable } from './types'
 import { minBid, validate } from './validate'
 
@@ -120,25 +120,30 @@ function resolveLanding(s: GameState, playerId: string, cardMultiplier?: number,
   const p = getPlayer(s, playerId)
   const t = BOARD[p.position]
   s.lastLanded = t.index
-  emit(s, { type: 'land', playerId, tile: t.index })
+  const land = (outcome: LandOutcome, amount?: number, toId?: string | null) =>
+    emit(s, { type: 'land', playerId, tile: t.index, outcome, amount, toId })
 
   if (isOwnable(t)) {
     const own = s.ownership[t.index]
     if (!own.owner) {
+      land('free')
       log(s, 'log.landFree', { vars: { name: p.name, amount: t.price }, tiles: { tile: t.index } })
       return 'buy'
     }
     if (own.owner === playerId) {
+      land('own')
       log(s, 'log.landOwn', { vars: { name: p.name }, tiles: { tile: t.index } })
       return 'none'
     }
     const owner = getPlayer(s, own.owner)
     if (own.mortgaged) {
+      land('mortgaged', 0, owner.id)
       log(s, 'log.landMortgaged', { vars: { name: p.name }, tiles: { tile: t.index } })
       return 'none'
     }
     const diceTotal = s.dice ? s.dice[0] + s.dice[1] : 0
     const rent = rentFor(s, t.index, diceTotal, cardMultiplier)
+    land('rent', rent, owner.id)
     log(s, 'log.rent', { vars: { name: p.name, amount: rent, owner: owner.name }, tiles: { tile: t.index } })
     charge(s, playerId, owner.id, rent)
     return 'none'
@@ -146,21 +151,27 @@ function resolveLanding(s: GameState, playerId: string, cardMultiplier?: number,
 
   switch (t.kind) {
     case 'tax':
+      land('tax', t.amount, null)
       log(s, 'log.tax', { vars: { name: p.name, amount: t.amount }, texts: { tile: t.nameKey } })
       charge(s, playerId, null, t.amount)
       return 'none'
     case 'card':
+      land('card')
       return depth > 3 ? 'none' : drawCard(s, playerId, t.deck, depth)
     case 'goToJail':
+      land('goToJail')
       sendToJail(s, playerId)
       return 'none'
     case 'parking':
+      land('parking')
       log(s, 'log.parking', { vars: { name: p.name } })
       return 'none'
     case 'jail':
+      land('visit')
       log(s, 'log.visitJail', { vars: { name: p.name } })
       return 'none'
     case 'go':
+      land('go')
       return 'none'
   }
   return 'none'

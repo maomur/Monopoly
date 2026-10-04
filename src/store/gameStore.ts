@@ -20,6 +20,13 @@ export type Modal =
 
 export type QuickSetup = { type: 'none' } | { type: 'rounds'; limit: number } | { type: 'time'; minutes: number }
 
+export type LandEvent = Extract<GameEvent, { type: 'land' }>
+
+/** Resultados que merecen ventana: para humanos casi todo, para bots solo lo que cuesta dinero o cárcel */
+const HUMAN_LANDING = new Set(['own', 'mortgaged', 'rent', 'tax', 'goToJail', 'parking', 'visit'])
+const BOT_LANDING = new Set(['rent', 'tax', 'goToJail'])
+const BOT_LANDING_MS = 1700
+
 const STEP_MS = 140
 const BOT_DELAY_MS = 650
 const BOT_CARD_MS = 1800
@@ -36,6 +43,8 @@ interface Store {
   queue: GameEvent[]
   /** Carta que se está mostrando */
   shownCard: { cardId: string; playerId: string } | null
+  /** Ventana de "has caído en…" que se está mostrando */
+  shownLanding: LandEvent | null
   modal: Modal
   zoom: boolean
   toast: { text: string; id: number } | null
@@ -47,6 +56,7 @@ interface Store {
   quitGame: () => void
   dispatch: (a: Action) => void
   dismissCard: () => void
+  dismissLanding: () => void
   setLang: (l: Lang) => void
   toggleMute: () => void
   setModal: (m: Modal) => void
@@ -66,7 +76,7 @@ export const useGame = create<Store>((set, get) => {
     if (stepTimer) return
     const { queue, game } = get()
     if (!game) return
-    if (get().shownCard) return // esperando a que se cierre la carta
+    if (get().shownCard || get().shownLanding) return // esperando a que se cierre la ventana
     const e = queue[0]
     if (!e) {
       set({ busy: false })
@@ -96,6 +106,17 @@ export const useGame = create<Store>((set, get) => {
         }
         return
       }
+      case 'land': {
+        const bot = getPlayer(game, e.playerId).isBot
+        if ((bot ? BOT_LANDING : HUMAN_LANDING).has(e.outcome)) {
+          set({ queue: queue.slice(1), shownLanding: e })
+          if (bot) stepTimer = setTimeout(() => { stepTimer = null; get().dismissLanding() }, BOT_LANDING_MS)
+          return
+        }
+        set({ queue: queue.slice(1) })
+        pump()
+        return
+      }
       case 'groupComplete':
         set({ queue: queue.slice(1), celebrate: Date.now() })
         pump()
@@ -113,8 +134,8 @@ export const useGame = create<Store>((set, get) => {
   function scheduleBot() {
     if (botTimer) clearTimeout(botTimer)
     botTimer = null
-    const { game, busy, shownCard } = get()
-    if (!game || busy || shownCard || game.phase === 'gameOver') return
+    const { game, busy, shownCard, shownLanding } = get()
+    if (!game || busy || shownCard || shownLanding || game.phase === 'gameOver') return
     const id = actorId(game)
     if (!id || !getPlayer(game, id).isBot) return
     botTimer = setTimeout(() => {
@@ -136,6 +157,7 @@ export const useGame = create<Store>((set, get) => {
       queue: [],
       busy: false,
       shownCard: null,
+      shownLanding: null,
       modal: { type: 'none' },
     })
     saveGame(game)
@@ -151,6 +173,7 @@ export const useGame = create<Store>((set, get) => {
     busy: false,
     queue: [],
     shownCard: null,
+    shownLanding: null,
     modal: { type: 'none' },
     zoom: false,
     toast: null,
@@ -171,7 +194,7 @@ export const useGame = create<Store>((set, get) => {
       stepTimer = null
       botTimer = null
       const g = get().game
-      set({ game: null, savedGame: g && g.phase !== 'gameOver' ? g : null, modal: { type: 'none' }, queue: [], busy: false, shownCard: null })
+      set({ game: null, savedGame: g && g.phase !== 'gameOver' ? g : null, modal: { type: 'none' }, queue: [], busy: false, shownCard: null, shownLanding: null })
     },
 
     dispatch: (a) => {
@@ -191,6 +214,11 @@ export const useGame = create<Store>((set, get) => {
 
     dismissCard: () => {
       set({ shownCard: null })
+      pump()
+    },
+
+    dismissLanding: () => {
+      set({ shownLanding: null })
       pump()
     },
 

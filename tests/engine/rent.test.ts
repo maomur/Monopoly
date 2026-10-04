@@ -53,6 +53,8 @@ describe('alquileres', () => {
     const entry = s.log.find((l) => l.key === 'log.rent')!
     expect(entry.vars).toMatchObject({ name: 'Ana', amount: 12, owner: 'Marc' })
     expect(entry.tiles).toEqual({ tile: 14 })
+    // La UI recibe el evento con el resultado para mostrar la ventana
+    expect(s.events).toContainEqual({ type: 'land', playerId: 'p1', tile: 14, outcome: 'rent', amount: 12, toId: 'p2' })
   })
 
   it('al caer en un servicio ajeno se paga según los dados de la tirada', () => {

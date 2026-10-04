@@ -309,6 +309,33 @@ export const es = {
   'log.gameOver': '¡{name} gana la partida!',
   'log.roundLimit': 'Se acabaron las vueltas: gana el mayor patrimonio.',
   'log.timeUp': '¡Se acabó el tiempo! Gana el mayor patrimonio.',
+
+  // ---- Ventanas emergentes ----
+  'landing.rent': '{name} paga a {owner}',
+  'landing.tax': '{name} paga a la banca',
+  'landing.own': '{name}, esta casilla es tuya',
+  'landing.mortgaged': 'Está hipotecada: {name} no paga',
+  'landing.goToJail': '¡Multa! {name} va a la Ronda',
+  'landing.parking': '{name} se echa una siesta',
+  'landing.visit': '{name} pasa por la Ronda de visita',
+  'popup.forSale': '¡En venta!',
+  'popup.auction': '¡Subasta!',
+  'auction.bidders': '{n} pujando',
+  'debt.kicker': 'Tienes una deuda',
+  'debt.hint': 'Vende edificios o hipoteca para reunir el dinero.',
+  'trade.kicker': 'Propuesta de intercambio',
+  'trade.titleFor': 'Para {name}',
+  'trade.passPhone': 'Pásale el móvil a {name} para que decida.',
+  'trade.offers': 'te ofrece:',
+  'jail.title': 'Atascado en la Ronda',
+  'jail.options': 'Puedes pagar {amount} €, usar una carta o intentar sacar dobles.',
+  'tileCard.group': 'Barrio · {group}',
+  'tileCard.transport': 'Transporte',
+  'tileCard.utility': 'Servicio',
+  'tileCard.tax': 'Impuesto',
+  'tileCard.card': 'Carta',
+  'tileCard.corner': 'Esquina',
+  'ui.decidePopup': 'tiene que decidir en la ventana',
 } as const
 
 export type I18nKey = keyof typeof es

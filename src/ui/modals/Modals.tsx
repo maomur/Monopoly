@@ -1,80 +1,23 @@
-import { BOARD, GROUP_COLORS, GROUPS, TRANSPORT_RENTS, UTILITY_MULTIPLIERS } from '../../engine/board'
+import { GROUPS } from '../../engine/board'
 import { CARD_BY_ID } from '../../engine/cards'
-import { getPlayer, netWorth, rentFor } from '../../engine/queries'
-import { isOwnable } from '../../engine/types'
+import { getPlayer, netWorth } from '../../engine/queries'
 import { useGame } from '../../store/gameStore'
-import { tileName } from '../format'
-import { ActionButton, Money, Sheet } from '../primitives'
+import { ActionButton, Money, Popup, Sheet } from '../primitives'
+import { TileCard } from '../TileCard'
 import { TokenIcon } from '../Token'
 import { LangToggle } from '../Header'
 import { useT } from '../useT'
-import { buildingLabel } from './ManageModal'
 
 export function TileModal({ index }: { index: number }) {
-  const game = useGame((s) => s.game)!
-  const lang = useGame((s) => s.lang)
   const setModal = useGame((s) => s.setModal)
   const t = useT()
-  const tile = BOARD[index]
-  const own = game.ownership[index]
-  const owner = own?.owner ? getPlayer(game, own.owner) : null
   const close = () => setModal({ type: 'none' })
-  const RENT_LABELS = ['tile.rentBase', 'tile.rent1', 'tile.rent2', 'tile.rent3', 'tile.rent4', 'tile.rentHotel']
-
   return (
-    <Sheet title={tileName(lang, index)} onClose={close}>
-      {tile.kind === 'property' && (
-        <div className="-mx-4 -mt-3 mb-3 h-3" style={{ background: GROUP_COLORS[tile.group].bg }} />
-      )}
-      {isOwnable(tile) && <p className="mb-3 italic">{t(tile.factKey)}</p>}
-      {isOwnable(tile) && (
-        <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm">
-          <dt>{t('tile.price')}</dt><dd className="text-right"><Money amount={tile.price} /></dd>
-          <dt>{t('tile.owner')}</dt>
-          <dd className="text-right">{owner ? owner.name : t('tile.noOwner')}</dd>
-          {tile.kind === 'property' && (
-            <>
-              {tile.rents.map((r, i) => (
-                <div key={i} className={`contents ${own.houses === i && owner ? 'font-bold' : ''}`}>
-                  <dt>{t(RENT_LABELS[i])}</dt>
-                  <dd className="text-right"><Money amount={r} /></dd>
-                </div>
-              ))}
-              <dt>{t('tile.groupDouble')}</dt><dd className="text-right"><Money amount={tile.rents[0] * 2} /></dd>
-              <dt>{t('tile.houseCost')}</dt><dd className="text-right"><Money amount={tile.houseCost} /></dd>
-              {owner && <><dt>{t('tile.buildings')}</dt><dd className="text-right">{buildingLabel(own.houses, t)}</dd></>}
-            </>
-          )}
-          {tile.kind === 'transport' &&
-            TRANSPORT_RENTS.map((r, i) => (
-              <div key={i} className="contents">
-                <dt>{t('tile.transportN', { n: i + 1 })}</dt><dd className="text-right"><Money amount={r} /></dd>
-              </div>
-            ))}
-          {tile.kind === 'utility' &&
-            UTILITY_MULTIPLIERS.map((m, i) => (
-              <div key={i} className="contents">
-                <dt>{t('tile.utilityN', { n: i + 1 })}</dt><dd className="text-right">{t('tile.timesDice', { m })}</dd>
-              </div>
-            ))}
-          <dt>{t('tile.mortgage')}</dt><dd className="text-right"><Money amount={tile.mortgage} /></dd>
-          {owner && (
-            <>
-              <dt className="font-semibold">{t('tile.currentRent')}</dt>
-              <dd className="text-right font-semibold">
-                {own.mortgaged ? t('manage.mortgaged') : tile.kind === 'utility' ? t('tile.timesDice', { m: rentFor(game, index, 1) }) : <Money amount={rentFor(game, index, 0)} />}
-              </dd>
-            </>
-          )}
-        </dl>
-      )}
-      {tile.kind === 'tax' && <p>{t('tile.taxInfo', { amount: tile.amount })}</p>}
-      {tile.kind === 'card' && <p>{t('tile.cardInfo')}</p>}
-      {tile.kind === 'go' && <p>{t('tile.goInfo')}</p>}
-      {tile.kind === 'jail' && <p>{t('tile.jailInfo')}</p>}
-      {tile.kind === 'parking' && <p>{t('tile.parkingInfo')}</p>}
-      {tile.kind === 'goToJail' && <p>{t('tile.goToJailInfo')}</p>}
-    </Sheet>
+    <Popup onClose={close} labelledBy="tile-title">
+      <TileCard index={index} titleId="tile-title">
+        <ActionButton className="w-full" onClick={close}>{t('ui.close')}</ActionButton>
+      </TileCard>
+    </Popup>
   )
 }
 

@@ -90,6 +90,9 @@ export interface LogEntry {
   texts?: Record<string, string>
 }
 
+export type LandOutcome =
+  | 'free' | 'own' | 'mortgaged' | 'rent' | 'tax' | 'card' | 'goToJail' | 'parking' | 'visit' | 'go'
+
 /** Eventos que produce la última acción, para que la UI los anime en orden */
 export type GameEvent =
   | { type: 'dice'; dice: [number, number]; playerId: string }
@@ -100,7 +103,17 @@ export type GameEvent =
   | { type: 'buy'; playerId: string; tile: number }
   | { type: 'groupComplete'; playerId: string; group: ColorGroup }
   | { type: 'build'; tile: number; houses: number }
-  | { type: 'land'; playerId: string; tile: number }
+  | {
+      type: 'land'
+      playerId: string
+      tile: number
+      /** Qué pasa al caer: la UI decide qué ventana mostrar */
+      outcome: LandOutcome
+      /** Dinero pagado (alquiler o impuesto) */
+      amount?: number
+      /** A quién se paga (null = banca) */
+      toId?: string | null
+    }
   | { type: 'bankrupt'; playerId: string }
   | { type: 'gameOver'; winnerId: string }
 

@@ -37,3 +37,8 @@ body {
 }
 .board-scroller { -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
 button { -webkit-tap-highlight-color: transparent; }
+@keyframes pop-in { from { transform: scale(0.92) translateY(8px); opacity: 0 } to { transform: none; opacity: 1 } }
+.pop-in { animation: pop-in 200ms cubic-bezier(.2,.9,.3,1.2) }
+@media (prefers-reduced-motion: reduce) { .pop-in { animation: none } }
+@keyframes bot-timer { from { width: 0 } to { width: 100% } }
+.bot-timer { animation: bot-timer 1700ms linear forwards }

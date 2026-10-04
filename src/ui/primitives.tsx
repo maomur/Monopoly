@@ -23,7 +23,10 @@ export function ActionButton({
   variant = 'secondary',
   big = false,
   className = '',
+  ignoreBusy = false,
 }: {
+  /** Para botones de ventanas que se muestran mientras la cola de animaciones está en pausa */
+  ignoreBusy?: boolean
   check?: Check
   onClick: () => void
   children: ReactNode
@@ -32,7 +35,7 @@ export function ActionButton({
   className?: string
 }) {
   const t = useT()
-  const busy = useGame((s) => s.busy)
+  const busy = useGame((s) => s.busy) && !ignoreBusy
   const showToast = useGame((s) => s.showToast)
   const blocked = check && !check.ok
   const reason = check && !check.ok ? t(check.reason, check.vars) : undefined
@@ -129,4 +132,55 @@ export function Sheet({
 
 export function Money({ amount, className = '' }: { amount: number; className?: string }) {
   return <span className={`tabular-nums ${className}`}>{amount.toLocaleString('es-ES', { useGrouping: 'always' } as Intl.NumberFormatOptions)} €</span>
+}
+
+/**
+ * Ventana emergente centrada (para casillas, decisiones y avisos).
+ * Sin `onClose` no se puede cerrar tocando fuera: obliga a decidir.
+ */
+export function Popup({
+  children,
+  onClose,
+  labelledBy,
+  wide = false,
+}: {
+  children: ReactNode
+  onClose?: () => void
+  labelledBy?: string
+  wide?: boolean
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null
+    ref.current?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onClose) onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      prev?.focus?.()
+    }
+  }, [onClose])
+  return (
+    <div className="fixed inset-0 z-40 overflow-y-auto overscroll-contain" role="presentation">
+      <div className="fixed inset-0 bg-ink/55" onClick={() => onClose?.()} aria-hidden="true" />
+      {/* min-h-full + centrado: si la tarjeta es más alta que la pantalla, se desplaza sin cortarse */}
+      <div
+        className="relative flex min-h-full items-center justify-center p-3 py-[max(0.75rem,env(safe-area-inset-top))] land:py-2"
+        onClick={(e) => { if (e.target === e.currentTarget) onClose?.() }}
+      >
+        <div
+          ref={ref}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={labelledBy}
+          tabIndex={-1}
+          className={`pop-in relative w-full ${wide ? 'max-w-md' : 'max-w-sm'} outline-none land:max-w-2xl`}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  )
 }

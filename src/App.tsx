@@ -9,6 +9,7 @@ import {
 } from './ui/modals/Modals'
 import { TradeModal } from './ui/modals/TradeModal'
 import { Panels } from './ui/Panels'
+import { DecisionPopups, LandingPopup } from './ui/popups/GamePopups'
 import { Setup } from './ui/Setup'
 import { useT } from './ui/useT'
 
@@ -41,6 +42,7 @@ function Modals() {
   const modal = useGame((s) => s.modal)
   const game = useGame((s) => s.game)!
   const shownCard = useGame((s) => s.shownCard)
+  const shownLanding = useGame((s) => s.shownLanding)
   const busy = useGame((s) => s.busy)
   return (
     <>
@@ -51,6 +53,8 @@ function Modals() {
       {modal.type === 'tile' && <TileModal index={modal.index} />}
       {modal.type === 'confirmBankrupt' && <ConfirmBankruptModal />}
       {shownCard && <CardModal />}
+      {shownLanding && !shownCard && <LandingPopup />}
+      <DecisionPopups />
       {game.phase === 'gameOver' && !busy && <GameOverModal />}
     </>
   )
