@@ -310,6 +310,7 @@ function eliminate(s: GameState, debtorId: string, creditorId: string | null) {
 
 function finishAuction(s: GameState) {
   const a = s.auction!
+  emit(s, { type: 'auctionEnd', winnerId: a.highestBidder })
   if (a.highestBidder) {
     const w = getPlayer(s, a.highestBidder)
     w.money -= a.highestBid
@@ -455,6 +456,7 @@ export function applyAction(state: GameState, action: Action): GameState {
       a.highestBid = action.amount
       a.highestBidder = action.playerId
       a.turn = (a.turn + 1) % a.bidders.length
+      emit(s, { type: 'bid', playerId: action.playerId, amount: action.amount })
       log(s, 'log.bid', { vars: { name: getPlayer(s, action.playerId).name, amount: action.amount } })
       settleAuction(s)
       break
@@ -500,6 +502,7 @@ export function applyAction(state: GameState, action: Action): GameState {
       const t = ownableTile(action.tile)
       const own = s.ownership[t.index]
       own.mortgaged = true
+      emit(s, { type: 'mortgage', tile: t.index, mortgaged: true })
       credit(s, own.owner!, t.mortgage)
       log(s, 'log.mortgage', { vars: { name: getPlayer(s, own.owner!).name, amount: t.mortgage }, tiles: { tile: t.index } })
       break
@@ -511,6 +514,7 @@ export function applyAction(state: GameState, action: Action): GameState {
       const cost = unmortgageCost(action.tile)
       p.money -= cost
       own.mortgaged = false
+      emit(s, { type: 'mortgage', tile: action.tile, mortgaged: false })
       emit(s, { type: 'money', fromId: p.id, toId: null, amount: cost })
       log(s, 'log.unmortgage', { vars: { name: p.name, amount: cost }, tiles: { tile: action.tile } })
       break
@@ -567,6 +571,7 @@ export function applyAction(state: GameState, action: Action): GameState {
       for (const i of t.get.tiles) s.ownership[i].owner = from.id
       to.jailFreeCards.push(...from.jailFreeCards.splice(0, t.give.jailCards))
       from.jailFreeCards.push(...to.jailFreeCards.splice(0, t.get.jailCards))
+      emit(s, { type: 'trade', accepted: true })
       log(s, 'log.tradeAccepted', { vars: { name: to.name, other: from.name } })
       for (const i of t.give.tiles) checkGroupComplete(s, to.id, i)
       for (const i of t.get.tiles) checkGroupComplete(s, from.id, i)
@@ -577,6 +582,7 @@ export function applyAction(state: GameState, action: Action): GameState {
 
     case 'rejectTrade': {
       const t = s.trade!
+      emit(s, { type: 'trade', accepted: false })
       log(s, 'log.tradeRejected', { vars: { name: getPlayer(s, t.toId).name } })
       s.trade = null
       s.phase = s.resumePhase

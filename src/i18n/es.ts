@@ -341,6 +341,9 @@ export const es = {
   'payment.bank': 'Banca',
   'payment.utility': 'Dados {d} × {m}',
   'payment.pay': 'Pagar y seguir',
+  'ui.sound': 'Sonido',
+  'ui.soundOn': 'Con sonido',
+  'ui.soundOff': 'Sin sonido',
 } as const
 
 export type I18nKey = keyof typeof es

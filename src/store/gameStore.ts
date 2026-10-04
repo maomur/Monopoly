@@ -7,6 +7,7 @@ import { applyAction } from '../engine/reducer'
 import { randomSeed } from '../engine/rng'
 import { createGame, type GameEvent, type GameState, type PlayerSetup, type QuickMode } from '../engine/state'
 import type { Lang } from '../i18n'
+import { setMuted, sfx } from '../audio/sfx'
 import { loadGame, loadPrefs, saveGame, savePrefs } from './persistence'
 
 export type Modal =
@@ -82,6 +83,7 @@ interface Store {
   dismissLanding: () => void
   setLang: (l: Lang) => void
   toggleMute: () => void
+  setSound: (on: boolean) => void
   setModal: (m: Modal) => void
   toggleZoom: () => void
   showToast: (text: string) => void
@@ -95,6 +97,7 @@ let fxSeq = 0
 const moneyOf = (g: GameState) => Object.fromEntries(g.players.map((p) => [p.id, p.money]))
 
 const prefs = loadPrefs()
+setMuted(prefs.muted)
 
 export const useGame = create<Store>((set, get) => {
   /** Procesa la cola de eventos de uno en uno (movimientos animados, cartas…) */
@@ -120,17 +123,20 @@ export const useGame = create<Store>((set, get) => {
         const pos = [...get().displayPos]
         if (get().landingAt) set({ landingAt: null })
         if (e.direct || pos[idx] === e.to) {
+          if (e.direct && pos[idx] !== e.to) sfx.whoosh()
           pos[idx] = e.to
           set({ displayPos: pos, queue: queue.slice(1) })
           next(e.direct ? JUMP_MS : 0)
           return
         }
         pos[idx] = e.backwards ? (pos[idx] + 39) % 40 : (pos[idx] + 1) % 40
+        sfx.step()
         set({ displayPos: pos })
         next(STEP_MS)
         return
       }
       case 'card': {
+        sfx.card()
         set({ queue: queue.slice(1), shownCard: { cardId: e.cardId, playerId: e.playerId } })
         if (getPlayer(game, e.playerId).isBot) {
           stepTimer = setTimeout(() => { stepTimer = null; get().dismissCard() }, BOT_CARD_MS)
@@ -139,6 +145,7 @@ export const useGame = create<Store>((set, get) => {
       }
       case 'land': {
         // La ficha se posa, la casilla brilla y después se abre la ventana
+        if (e.outcome !== 'go') sfx.land()
         set({ queue: queue.slice(1), landingAt: { tile: e.tile, playerId: e.playerId } })
         stepTimer = setTimeout(() => {
           stepTimer = null
@@ -160,6 +167,9 @@ export const useGame = create<Store>((set, get) => {
           pump()
           return
         }
+        // Quien paga oye monedas que caen; quien cobra, monedas que suben (al llegar)
+        if (e.fromId) sfx.coinOut()
+        if (e.toId) setTimeout(() => sfx.coinIn(), e.fromId ? 750 : 0)
         const fx: MoneyFx = { id: ++fxSeq, fromId: e.fromId, toId: e.toId, amount: e.amount }
         const dm = { ...get().displayMoney }
         if (e.fromId && dm[e.fromId] !== undefined) dm[e.fromId] -= e.amount
@@ -170,10 +180,12 @@ export const useGame = create<Store>((set, get) => {
         return
       }
       case 'groupComplete':
+        sfx.fanfare()
         set({ queue: queue.slice(1), celebrate: Date.now() })
         next(400)
         return
       case 'dice':
+        sfx.dice()
         set({ queue: queue.slice(1), rolling: true, landingAt: null, rollSeq: get().rollSeq + 1 })
         stepTimer = setTimeout(() => {
           stepTimer = null
@@ -182,6 +194,18 @@ export const useGame = create<Store>((set, get) => {
         }, DICE_MS)
         return
       default:
+        // Eventos sin animación propia: solo suenan
+        switch (e.type) {
+          case 'jail': sfx.jail(); break
+          case 'buy': sfx.buy(); break
+          case 'build': sfx.build(e.houses === 5); break
+          case 'mortgage': sfx.mortgage(e.mortgaged); break
+          case 'bid': sfx.bid(); break
+          case 'auctionEnd': sfx.gavel(!!e.winnerId); break
+          case 'trade': if (e.accepted) sfx.deal(); else sfx.noDeal(); break
+          case 'bankrupt': sfx.bankrupt(); break
+          case 'gameOver': sfx.victory(); break
+        }
         set({ queue: queue.slice(1) })
         pump()
     }
@@ -296,7 +320,14 @@ export const useGame = create<Store>((set, get) => {
     toggleMute: () => {
       const muted = !get().muted
       set({ muted })
+      setMuted(muted)
+      if (!muted) sfx.test()
       savePrefs({ lang: get().lang, muted })
+    },
+
+    setSound: (on) => {
+      if (get().muted === !on) return
+      get().toggleMute()
     },
 
     setModal: (modal) => set({ modal }),

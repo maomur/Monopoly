@@ -45,13 +45,13 @@ function PopupCard({
   footer: ReactNode
 }) {
   return (
-    <article className="overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/10">
+    <article className="popup-card overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/10">
       <header className="px-4 py-3 text-center text-white" style={{ background: color }}>
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] opacity-85">{kicker}</p>
         <h2 id={titleId} className="font-display text-2xl font-bold leading-tight [text-wrap:balance]">{title}</h2>
       </header>
-      <div className="space-y-3 px-4 py-3">{children}</div>
-      <footer className="space-y-2 border-t border-ink/10 bg-arena/60 px-4 py-3">{footer}</footer>
+      <div className="popup-body space-y-3 px-4 py-3">{children}</div>
+      <footer className="popup-foot space-y-2 border-t border-ink/10 bg-arena/60 px-4 py-3">{footer}</footer>
     </article>
   )
 }
@@ -146,14 +146,14 @@ function PaymentTicket({ e, footer }: { e: LandEvent; footer: ReactNode }) {
   const amount = e.amount ?? 0
   const reason = e.outcome === 'rent' ? rentReason(t, game, e.tile, amount) : ''
   return (
-    <article className="ticket overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/10">
+    <article className="popup-card ticket overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/10">
       <header className="px-4 py-2.5 text-center" style={{ background: colors.bg, color: colors.text }}>
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] opacity-85">
           {e.outcome === 'rent' ? t('payment.rent') : t('payment.tax')}
         </p>
         <h2 id="landing-title" className="font-display text-xl font-bold leading-tight">{tileName(lang, e.tile)}</h2>
       </header>
-      <div className="px-4 pb-4 pt-4">
+      <div className="popup-body px-4 pb-4 pt-4">
         <div className="flex items-start justify-between gap-2">
           <Avatar id={e.playerId} />
           <div className="coin-track relative mt-5 h-6 flex-1" aria-hidden="true">
@@ -169,7 +169,7 @@ function PaymentTicket({ e, footer }: { e: LandEvent; footer: ReactNode }) {
         {reason && <p className="mt-1 text-center text-sm opacity-75">{reason}</p>}
       </div>
       <div className="ticket-perf" aria-hidden="true" />
-      <footer className="space-y-2 bg-arena/60 px-4 py-3">{footer}</footer>
+      <footer className="popup-foot space-y-2 bg-arena/60 px-4 py-3">{footer}</footer>
     </article>
   )
 }

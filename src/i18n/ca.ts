@@ -343,4 +343,7 @@ export const ca: Dict = {
   'payment.bank': 'Banca',
   'payment.utility': 'Daus {d} × {m}',
   'payment.pay': 'Pagar i continuar',
+  'ui.sound': 'So',
+  'ui.soundOn': 'Amb so',
+  'ui.soundOff': 'Sense so',
 }

@@ -84,7 +84,7 @@ export function TileCard({
   const utilityOwned = owner && tile.kind === 'utility' ? countOwnedOfKind(game, owner.id, 'utility') : 0
 
   return (
-    <article className="overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/10">
+    <article className="popup-card overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/10">
       {headline && <div className="bg-ink px-4 py-2.5 text-center font-display text-lg font-semibold text-white land:py-1.5">{headline}</div>}
 
       <header className="px-4 pb-3 pt-3 text-center land:py-2" style={{ background: colors.bg, color: colors.text }}>
@@ -92,7 +92,7 @@ export function TileCard({
         <h2 id={titleId} className="font-display text-2xl font-bold leading-tight [text-wrap:balance]">{tileName(lang, index)}</h2>
       </header>
 
-      <div className={`space-y-3 px-4 py-3 land:py-2 ${isOwnable(tile) && !compact ? 'land:grid land:grid-cols-2 land:items-start land:gap-4 land:space-y-0' : ''}`}>
+      <div className={`popup-body space-y-3 px-4 py-3 land:py-2 ${isOwnable(tile) && !compact ? 'land:grid land:grid-cols-2 land:items-start land:gap-4 land:space-y-0' : ''}`}>
         <div className="space-y-3">
         {isOwnable(tile) && (
           <div className="flex items-center justify-between gap-2 text-sm">
@@ -177,7 +177,7 @@ export function TileCard({
         </div>
       </div>
 
-      {children && <footer className="space-y-2 border-t border-ink/10 bg-arena/60 px-4 py-3">{children}</footer>}
+      {children && <footer className="popup-foot space-y-2 border-t border-ink/10 bg-arena/60 px-4 py-3">{children}</footer>}
     </article>
   )
 }

@@ -5,7 +5,7 @@ import { useGame } from '../../store/gameStore'
 import { ActionButton, Money, Popup, Sheet } from '../primitives'
 import { TileCard } from '../TileCard'
 import { TokenIcon } from '../Token'
-import { LangToggle } from '../Header'
+import { LangToggle, SoundToggle } from '../Header'
 import { useT } from '../useT'
 
 export function TileModal({ index }: { index: number }) {
@@ -126,6 +126,10 @@ export function MenuModal() {
         <div className="flex items-center justify-between">
           <span>{t('ui.language')}</span>
           <LangToggle />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span>{t('ui.sound')}</span>
+          <SoundToggle />
         </div>
         <ActionButton onClick={() => setModal({ type: 'help' })}>{t('ui.help')}</ActionButton>
         <ActionButton onClick={quit}>{t('menu.exit')}</ActionButton>

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { sfx } from '../audio/sfx'
 import type { Check } from '../engine/validate'
 import { useGame } from '../store/gameStore'
 import { useT } from './useT'
@@ -47,7 +48,10 @@ export function ActionButton({
       title={reason}
       onClick={() => {
         if (busy) return
-        if (blocked) showToast(reason!)
+        if (blocked) {
+          sfx.deny()
+          showToast(reason!)
+        }
         else onClick()
       }}
       className={[
@@ -153,6 +157,10 @@ export function Popup({
   originTile?: number
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  // Soplido al abrir
+  useEffect(() => {
+    sfx.whoosh()
+  }, [])
   // La tarjeta sale de la casilla, vuela girando hasta el centro y rebota
   useEffect(() => {
     const el = ref.current
@@ -192,7 +200,7 @@ export function Popup({
       <div className="backdrop-in fixed inset-0 bg-ink/55" onClick={() => onClose?.()} aria-hidden="true" />
       {/* min-h-full + centrado: si la tarjeta es más alta que la pantalla, se desplaza sin cortarse */}
       <div
-        className="relative flex min-h-full items-center justify-center p-3 py-[max(0.75rem,env(safe-area-inset-top))] [perspective:1200px] land:py-2"
+        className="relative flex min-h-full items-center justify-center p-3 py-[max(0.75rem,env(safe-area-inset-top))] [perspective:1200px] land:px-6 land:py-3"
         onClick={(e) => { if (e.target === e.currentTarget) onClose?.() }}
       >
         <div

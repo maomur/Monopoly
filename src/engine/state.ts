@@ -115,6 +115,10 @@ export type GameEvent =
       toId?: string | null
     }
   | { type: 'bankrupt'; playerId: string }
+  | { type: 'bid'; playerId: string; amount: number }
+  | { type: 'trade'; accepted: boolean }
+  | { type: 'mortgage'; tile: number; mortgaged: boolean }
+  | { type: 'auctionEnd'; winnerId: string | null }
   | { type: 'gameOver'; winnerId: string }
 
 export interface GameState {
