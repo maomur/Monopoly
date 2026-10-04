@@ -45,13 +45,6 @@ button { -webkit-tap-highlight-color: transparent; }
 
 /* ===================== Efectos de juego ===================== */
 
-/* Casilla donde se posa la ficha: halo dorado que late */
-@keyframes tile-land {
-  0% { box-shadow: inset 0 0 0 0 rgba(255, 201, 48, 0); transform: scale(1) }
-  30% { box-shadow: inset 0 0 0 4px #FFC930, 0 0 18px 6px rgba(255, 201, 48, 0.85); transform: scale(1.08) }
-  100% { box-shadow: inset 0 0 0 3px #FFC930, 0 0 10px 2px rgba(255, 201, 48, 0.55); transform: scale(1) }
-}
-.tile-land { animation: tile-land 700ms ease-out forwards; z-index: 5 }
 
 /* Salto de la ficha en cada casilla */
 @keyframes token-hop {
@@ -134,7 +127,7 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile-land, .token-hop, .token-land, .token-land::after,   .money-flash-up, .money-flash-down, .backdrop-in, .pop-shine > article::after, .coin-run { animation: none !important }
+  .token-hop, .token-land, .token-land::after,   .money-flash-up, .money-flash-down, .backdrop-in, .pop-shine > article::after, .coin-run { animation: none !important }
   .coin-run { opacity: 1; left: 40% }
 }
 @keyframes banner-life { 0% { opacity: 0; transform: scale(.6) } 12% { opacity: 1; transform: scale(1.1) } 20% { transform: scale(1) } 80% { opacity: 1 } 100% { opacity: 0; transform: translateY(-20px) } }
@@ -189,3 +182,55 @@ button { -webkit-tap-highlight-color: transparent; }
   .ticket .popup-body { padding-top: .6rem; padding-bottom: .6rem }
   .ticket .popup-body .text-5xl { font-size: 2.25rem }
 }
+
+/* ===================== Tablero: manzanas del Eixample =====================
+   Casillas = manzanas blancas con chaflán; entre ellas, calles de pizarra.
+   El centro es una plaza de piedra con el panot de flor como textura. */
+.board-grid {
+  --street: #3A4A62;
+  --gap: max(1px, calc(var(--bw, 375px) * 0.0042));
+  --cut: calc(var(--bw, 375px) * 0.011);
+  background: var(--street);
+  border-radius: calc(var(--bw, 375px) * 0.018);
+  padding: 0;
+}
+.tile { background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent }
+.tile-block, .plaza::before {
+  inset: var(--gap);
+  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+}
+.tile-block { transition: background-color .2s, box-shadow .2s }
+.tile:focus-visible { outline: none }
+.tile:focus-visible .tile-block { box-shadow: inset 0 0 0 3px #0B5CAD }
+.tile-current .tile-block { box-shadow: inset 0 0 0 2px #B0442D }
+.tile-price { font-size: .82em; opacity: .62; font-weight: 600 }
+.tile-house {
+  width: max(4px, calc(var(--bw, 375px) * 0.011)); height: max(4px, calc(var(--bw, 375px) * 0.011));
+  background: #fff; border-radius: 1px; box-shadow: 0 0 0 1px rgba(0,0,0,.25);
+}
+.tile-hotel {
+  width: max(8px, calc(var(--bw, 375px) * 0.026)); height: max(5px, calc(var(--bw, 375px) * 0.013));
+  background: #fff; border-radius: 1px; box-shadow: 0 0 0 1px rgba(0,0,0,.3), inset 0 0 0 2px #D7263D;
+}
+/* Hipotecada: rayado diagonal y apagada */
+.tile-mortgaged { color: rgba(26,26,46,.55) }
+.tile-mortgaged::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(135deg, rgba(58,74,98,.16) 0 3px, transparent 3px 7px);
+}
+/* Plaza central */
+.plaza::before {
+  content: ""; position: absolute; z-index: 0;
+  background-color: #ECE3D2;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%233A4A62' stroke-opacity='.075' stroke-width='1.1'%3E%3Cpath d='M20 7c3.2 4.2 3.2 8.6 0 13c-3.2-4.4-3.2-8.8 0-13zM20 33c3.2-4.2 3.2-8.6 0-13c-3.2 4.4-3.2 8.8 0 13zM7 20c4.2-3.2 8.6-3.2 13 0c-4.4 3.2-8.8 3.2-13 0zM33 20c-4.2-3.2-8.6-3.2-13 0c4.4 3.2 8.8 3.2 13 0z'/%3E%3Ccircle cx='20' cy='20' r='2.2'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: calc(var(--bw, 375px) * 0.105);
+  background-position: center;
+}
+.plaza > * { position: relative; z-index: 1 }
+
+/* La ficha se posa: la manzana se ilumina y late una vez */
+@keyframes tile-pop { 0% { transform: scale(1) } 35% { transform: scale(1.09) } 100% { transform: scale(1) } }
+.tile-land { animation: tile-pop 600ms cubic-bezier(.3,1.5,.5,1); z-index: 5 }
+.tile-land .tile-block { box-shadow: inset 0 0 0 3px #FFC930, inset 0 0 18px rgba(255,201,48,.55); background-color: #FFF7DA }
+@media (prefers-reduced-motion: reduce) { .tile-land { animation: none } }

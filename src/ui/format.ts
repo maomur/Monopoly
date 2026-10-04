@@ -20,7 +20,7 @@ export function tileShort(lang: Lang, index: number): string {
     case 'jail': return 'Ronda'
     case 'parking': return 'Ciutadella'
     case 'goToJail': return 'ZBE'
-    case 'card': return t.deck === 'sorpresa' ? '?' : '★'
+    case 'card': return t.deck === 'sorpresa' ? 'Sorpresa' : 'Festa'
     case 'tax': return translate(lang, t.nameKey)
     default: return t.name
   }

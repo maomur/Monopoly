@@ -4,7 +4,9 @@ import type { GameState } from '../engine/state'
 import { useGame } from '../store/gameStore'
 import { CenterPanel } from './CenterPanel'
 import { tileName, tileShort } from './format'
+import { TileGlyph, glyphFor } from './TileGlyph'
 import { TokenIcon } from './Token'
+import { isOwnable } from '../engine/types'
 
 // Geometría: 11×11, esquinas 1,5 veces más grandes. Unidades totales por lado: 12.
 const UNITS = 12
@@ -31,11 +33,20 @@ function centerPct(i: number): { x: number; y: number } {
   }
 }
 
-const BAR_CLASS = {
-  bottom: 'top-0 left-0 right-0 h-[22%]',
-  top: 'bottom-0 left-0 right-0 h-[22%]',
-  left: 'right-0 top-0 bottom-0 w-[22%]',
-  right: 'left-0 top-0 bottom-0 w-[22%]',
+// Banda de color del grupo: siempre en el lado que mira al centro del tablero
+const BAND = {
+  bottom: { band: 'top-0 inset-x-0 h-[26%]', pad: 'pt-[28%]', strip: 'bottom-0 inset-x-0 h-[11%]', padOwner: 'pb-[12%]', dots: 'flex-row' },
+  top: { band: 'bottom-0 inset-x-0 h-[26%]', pad: 'pb-[28%]', strip: 'top-0 inset-x-0 h-[11%]', padOwner: 'pt-[12%]', dots: 'flex-row' },
+  left: { band: 'right-0 inset-y-0 w-[16%]', pad: 'pr-[17%]', strip: 'left-0 inset-y-0 w-[6%]', padOwner: 'pl-[7%]', dots: 'flex-col' },
+  right: { band: 'left-0 inset-y-0 w-[16%]', pad: 'pl-[17%]', strip: 'right-0 inset-y-0 w-[6%]', padOwner: 'pr-[7%]', dots: 'flex-col' },
+}
+
+// Esquinas: un tono propio y un icono grande
+const CORNER_TINT: Record<string, string> = {
+  go: 'bg-[#FFE7A3] text-[#5A4200]',
+  jail: 'bg-[#F6D8CF] text-[#7A2A17]',
+  parking: 'bg-[#D6ECDD] text-[#1F5A36]',
+  goToJail: 'bg-[#D7E4F4] text-[#123E73]',
 }
 
 function Cell({ game, index, current, landing }: { game: GameState; index: number; current: boolean; landing: boolean }) {
@@ -46,6 +57,11 @@ function Cell({ game, index, current, landing }: { game: GameState; index: numbe
   const own = game.ownership[index]
   const owner = own?.owner ? game.players.find((p) => p.id === own.owner) : null
   const corner = t.kind === 'go' || t.kind === 'jail' || t.kind === 'parking' || t.kind === 'goToJail'
+  const glyph = glyphFor(index)
+  const geo = BAND[side]
+  const showPrice = isOwnable(t) && !owner
+  // En los laterales las casillas son bajas: icono a la izquierda del texto
+  const sideways = !corner && !!glyph && (side === 'left' || side === 'right')
 
   return (
     <button
@@ -53,38 +69,34 @@ function Cell({ game, index, current, landing }: { game: GameState; index: numbe
       data-tile={index}
       onClick={() => setModal({ type: 'tile', index })}
       aria-label={tileName(lang, index)}
-      className={[
-        'relative overflow-hidden border border-ink/25 bg-white text-ink',
-        'flex items-center justify-center p-[2px] text-center leading-[1.05]',
-        corner ? 'bg-sol/40 font-bold' : '',
-        current ? 'ring-2 ring-inset ring-terracota' : '',
-        landing ? 'tile-land' : '',
-        own?.mortgaged ? 'opacity-55' : '',
-      ].join(' ')}
+      className={`tile relative text-ink ${landing ? 'tile-land' : ''} ${current ? 'tile-current' : ''}`}
       style={{ gridRow: row + 1, gridColumn: col + 1 }}
     >
-      {t.kind === 'property' && (
-        <span className={`absolute ${BAR_CLASS[side]}`} style={{ background: GROUP_COLORS[t.group].bg }} />
-      )}
-      {owner && (
-        <span
-          className="absolute bottom-[2px] right-[2px] h-[18%] w-[18%] min-h-1.5 min-w-1.5 rounded-full border border-white"
-          style={{ background: owner.color }}
-        />
-      )}
-      {own && own.houses > 0 && (
-        <span className="absolute left-[2px] bottom-[2px] flex gap-[1px]">
-          {own.houses === HOTEL ? (
-            <span className="block h-[6px] w-[10px] rounded-[1px] bg-[#D7263D] ring-1 ring-white" />
-          ) : (
-            Array.from({ length: own.houses }, (_, k) => (
-              <span key={k} className="block h-[5px] w-[5px] rounded-[1px] bg-olivo ring-1 ring-white" />
-            ))
-          )}
+      <span
+        className={[
+          'tile-block absolute flex flex-col items-center justify-center overflow-hidden text-center leading-[1.05]',
+          corner ? `${CORNER_TINT[t.kind]} gap-[0.25em] font-display font-semibold` : 'bg-white gap-[0.15em]',
+          t.kind === 'property' ? geo.pad : '',
+          owner ? geo.padOwner : '',
+          own?.mortgaged ? 'tile-mortgaged' : '',
+        ].join(' ')}
+      >
+        {t.kind === 'property' && (
+          <span className={`absolute ${geo.band} flex items-center justify-center gap-[6%] ${geo.dots}`} style={{ background: GROUP_COLORS[t.group].bg }}>
+            {own && own.houses > 0 && own.houses < HOTEL &&
+              Array.from({ length: own.houses }, (_, k) => <span key={k} className="tile-house" />)}
+            {own?.houses === HOTEL && <span className="tile-hotel" />}
+          </span>
+        )}
+        {owner && <span className={`absolute ${geo.strip}`} style={{ background: owner.color }} />}
+
+        <span className={`relative flex w-full items-center justify-center ${sideways ? 'flex-row gap-[0.35em]' : 'flex-col gap-[0.15em]'}`}>
+          {glyph && <TileGlyph name={glyph} className={corner ? 'h-[2.6em] w-[2.6em]' : sideways ? 'h-[1.5em] w-[1.5em] shrink-0 text-mar-deep' : 'h-[1.9em] w-[1.9em] shrink-0 text-mar-deep'} />}
+          <span className={`flex min-w-0 flex-col items-center ${sideways ? 'flex-1' : 'w-full'}`}>
+            <span className={`w-full px-[3%] ${showPrice ? 'line-clamp-2' : 'line-clamp-3'} ${corner ? 'text-[1.05em]' : ''}`}>{tileShort(lang, index)}</span>
+            {showPrice && isOwnable(t) && <span className="tile-price tabular-nums">{t.price} €</span>}
+          </span>
         </span>
-      )}
-      <span className="board-label relative z-[1] line-clamp-3">
-        {tileShort(lang, index)}
       </span>
     </button>
   )
@@ -165,7 +177,7 @@ export function Board() {
         style={{ width: zoom ? '210%' : '100%', fontSize: zoom ? clampPx(9, bw * 0.034, 14) : clampPx(6, bw * 0.017, 13) }}
       >
         <div
-          className="board-grid absolute inset-0 grid bg-mar"
+          className="board-grid absolute inset-0 grid"
           style={{
             gridTemplateColumns: '1.5fr repeat(9, 1fr) 1.5fr',
             gridTemplateRows: '1.5fr repeat(9, 1fr) 1.5fr',
@@ -174,7 +186,7 @@ export function Board() {
           {BOARD.map((t) => (
             <Cell key={t.index} game={game} index={t.index} current={t.index === focusPos} landing={landingAt?.tile === t.index} />
           ))}
-          <div className="overflow-hidden" style={{ gridRow: '2 / 11', gridColumn: '2 / 11' }}>
+          <div className="plaza relative overflow-hidden" style={{ gridRow: '2 / 11', gridColumn: '2 / 11' }}>
             <CenterPanel />
           </div>
         </div>

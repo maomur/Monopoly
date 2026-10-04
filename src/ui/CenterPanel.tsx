@@ -112,7 +112,7 @@ export function CenterPanel() {
   const seq = useGame((s) => s.rollSeq)
   const [a, b] = dice ?? [5, 2]
   return (
-    <div className="flex h-full items-center justify-center gap-[9%] bg-arena">
+    <div className="flex h-full items-center justify-center gap-[9%]">
       <Die3D value={a} seq={seq} index={0} />
       <Die3D value={b} seq={seq} index={1} />
     </div>
