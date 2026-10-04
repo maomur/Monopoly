@@ -1,32 +1,56 @@
-# React + TypeScript + Vite
+# BCN Tycoon
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Juego de mesa de compraventa de barrios de Barcelona para 2–4 jugadores en el mismo dispositivo (hot-seat), con bots opcionales.
 
-Currently, two official plugins are available:
+## Ejecutar en local
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Requisitos: Node.js 20 o superior.
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev        # http://localhost:5173 (añade --host para abrirlo desde el móvil en la misma wifi)
+npm test           # tests del motor de reglas (Vitest)
+npm run build      # compila a dist/
+npm run preview    # sirve dist/ para probar la versión de producción
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Desplegar en Vercel
+
+Opción A, desde la web:
+1. Sube el proyecto a un repositorio de GitHub.
+2. En vercel.com → **Add New… → Project** → importa el repositorio.
+3. Vercel detecta Vite solo (build `npm run build`, salida `dist`). Pulsa **Deploy**.
+
+Opción B, desde la terminal:
+```bash
+npx vercel          # primera vez: enlaza el proyecto y crea un despliegue de prueba
+npx vercel --prod   # despliegue a producción
+```
+
+No necesita variables de entorno ni backend: la partida se guarda en el `localStorage` del navegador.
+
+## Estructura
+
+```
+src/engine/   Motor de reglas puro (sin React), testeable
+  board.ts      ← Tablero editable: precios, alquileres, casas, hipotecas
+  cards.ts      ← Mazos Sorpresa BCN y Festa Major (efectos)
+  reducer.ts    (estado, acción) → nuevo estado
+  validate.ts   Qué se puede hacer y por qué no (motivos para los tooltips)
+  bot.ts        IA de los bots
+src/i18n/     Todos los textos: es.ts (por defecto) y ca.ts
+src/store/    Zustand: partida, animaciones, bots, guardado
+src/ui/       Componentes de interfaz
+tests/engine/ Tests de movimiento, alquileres, cárcel, construcción, bancarrota, cartas, subasta, intercambios y partidas completas bot contra bot
+```
+
+## Reglas implementadas
+
+- Dos dados; dobles repiten, 3 dobles seguidos → atasco en la Ronda de Dalt (cárcel).
+- Salir de la Ronda: pagar 50 €, sacar dobles (3 intentos; al tercer fallo pagas 50 € y sales) o carta.
+- Propiedad libre: comprar o subasta entre todos (puja mínima 10 €).
+- Grupo completo sin casas: alquiler doble. Construcción y venta uniformes; hotel tras 4 casas.
+- Hipoteca a mitad de precio; deshipotecar cuesta +10 %.
+- Intercambios de propiedades, dinero y cartas de salir (no se pueden intercambiar propiedades de grupos con edificios).
+- Deudas: si no te llega, vendes/hipotecas o quiebras; tus bienes pasan al acreedor (o a la banca).
+- Partida rápida por vueltas o por tiempo: gana el mayor patrimonio.
