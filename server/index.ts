@@ -113,7 +113,11 @@ export class GameRoom extends Server<Env> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
-    if (url.pathname === '/') return new Response('BCN Tycoon online: OK', { headers: { 'content-type': 'text/plain; charset=utf-8' } })
+    if (url.pathname === '/') {
+      return new Response('<!doctype html><meta charset="utf-8"><title>BCN Tycoon online</title><p>BCN Tycoon online: OK</p>', {
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      })
+    }
     return (await routePartykitRequest(request, env as unknown as Record<string, unknown>)) ?? new Response('Not found', { status: 404 })
   },
 } satisfies ExportedHandler<Env>

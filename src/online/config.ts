@@ -1,7 +1,7 @@
 // Dirección del servidor de salas online (Cloudflare Worker).
-// En producción se configura con la variable VITE_PARTY_HOST en Vercel
-// (por ejemplo: bcn-tycoon-online.tu-cuenta.workers.dev).
-export const PARTY_HOST: string = (import.meta.env.VITE_PARTY_HOST as string | undefined)?.trim() ?? ''
+// Se puede cambiar con la variable VITE_PARTY_HOST (en local: 127.0.0.1:8787).
+const DEFAULT_PARTY_HOST = 'bcn-tycoon-online.maomur.workers.dev'
+export const PARTY_HOST: string = (import.meta.env.VITE_PARTY_HOST as string | undefined)?.trim() || DEFAULT_PARTY_HOST
 
 /** El modo online solo existe en la web propia con servidor configurado */
 export function onlineAvailable(): boolean {

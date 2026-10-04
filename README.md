@@ -48,9 +48,10 @@ VITE_PARTY_HOST=127.0.0.1:8787 npm run build && npm run preview
 3. Nombre del proyecto: `bcn-tycoon-online` · Comando de despliegue: `npx wrangler deploy`.
 4. Al terminar te da una dirección tipo `bcn-tycoon-online.TU-SUBDOMINIO.workers.dev`.
 
-**Conectar la web** (una vez): en Vercel → *Settings → Environment Variables* añade
-`VITE_PARTY_HOST` = `bcn-tycoon-online.TU-SUBDOMINIO.workers.dev` y vuelve a desplegar.
-Sin esa variable la app funciona igual, pero sin el modo online.
+**Conectar la web**: la dirección del servidor está en `src/online/config.ts`
+(`bcn-tycoon-online.maomur.workers.dev`). Para usar otro servidor, cambia esa constante
+o define `VITE_PARTY_HOST` en Vercel. En *Workers → Configuración → Dominios y rutas*
+el dominio `workers.dev` debe estar habilitado.
 
 ## Estructura
 
