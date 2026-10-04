@@ -84,18 +84,22 @@ export function Sheet({
   const id = useId()
   const ref = useRef<HTMLDivElement>(null)
 
+  // El foco se mueve solo al abrir/cerrar: si dependiera de onClose (nuevo en cada render),
+  // cada tecla pulsada quitaría el foco del campo y en el móvil se cerraría el teclado
+  const closeRef = useRef(onClose)
+  closeRef.current = closable ? onClose : undefined
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null
     ref.current?.focus()
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && closable && onClose) onClose()
+      if (e.key === 'Escape') closeRef.current?.()
     }
     window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('keydown', onKey)
       prev?.focus?.()
     }
-  }, [closable, onClose])
+  }, [])
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center sm:items-center" role="presentation">
@@ -183,18 +187,20 @@ export function Popup({
       { duration: 720, easing: 'cubic-bezier(.2,.85,.25,1)' },
     )
   }, [originTile])
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null
     ref.current?.focus()
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && onClose) onClose()
+      if (e.key === 'Escape') closeRef.current?.()
     }
     window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('keydown', onKey)
       prev?.focus?.()
     }
-  }, [onClose])
+  }, [])
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto overscroll-contain" role="presentation">
       <div className="backdrop-in fixed inset-0 bg-ink/55" onClick={() => onClose?.()} aria-hidden="true" />
