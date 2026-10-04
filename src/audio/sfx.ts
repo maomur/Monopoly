@@ -1,13 +1,27 @@
-// Efectos de sonido sintetizados con Web Audio: sin archivos, pesan 0 KB.
-// Cada sonido se construye con osciladores y ruido filtrado.
+// Efectos de sonido sintetizados con Web Audio (sin archivos).
+// Estética moderna de interfaz: campanas de cristal (FM), acordes suaves con reverb,
+// soplidos de aire filtrado y "clics" táctiles. Nada de ondas cuadradas ni de 8 bits.
+// Todas las notas salen de una escala pentatónica de Re para que todo suene armónico.
 
 let ctx: AudioContext | null = null
-let master: GainNode | null = null
+let dry: GainNode | null = null
+let wet: GainNode | null = null
 let noiseBuf: AudioBuffer | null = null
 let muted = false
 
 export function setMuted(m: boolean) {
   muted = m
+}
+
+/** Respuesta de impulso sintética: una sala suave de ~2 s */
+function makeImpulse(c: AudioContext, seconds = 2.2, decay = 3.2): AudioBuffer {
+  const len = Math.floor(c.sampleRate * seconds)
+  const buf = c.createBuffer(2, len, c.sampleRate)
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch)
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay)
+  }
+  return buf
 }
 
 function audio(): AudioContext | null {
@@ -16,14 +30,30 @@ function audio(): AudioContext | null {
     const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AC) return null
     ctx = new AC()
+    // Cadena: (seco + reverb) → filtro de brillo → compresor suave → salida
+    const tone = ctx.createBiquadFilter()
+    tone.type = 'lowpass'
+    tone.frequency.value = 9000
     const comp = ctx.createDynamicsCompressor()
-    comp.threshold.value = -14
-    comp.ratio.value = 4
-    master = ctx.createGain()
-    master.gain.value = 0.55
-    master.connect(comp)
-    comp.connect(ctx.destination)
-    noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate)
+    comp.threshold.value = -18
+    comp.knee.value = 12
+    comp.ratio.value = 3
+    const out = ctx.createGain()
+    out.gain.value = 0.9
+    tone.connect(comp).connect(out).connect(ctx.destination)
+
+    dry = ctx.createGain()
+    dry.gain.value = 0.8
+    dry.connect(tone)
+
+    const verb = ctx.createConvolver()
+    verb.buffer = makeImpulse(ctx)
+    const verbOut = ctx.createGain()
+    verbOut.gain.value = 0.32
+    wet = ctx.createGain()
+    wet.connect(verb).connect(verbOut).connect(tone)
+
+    noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate)
     const d = noiseBuf.getChannelData(0)
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
   }
@@ -43,228 +73,276 @@ if (typeof window !== 'undefined') {
 function ready(): AudioContext | null {
   if (muted) return null
   const c = audio()
-  if (!c || c.state !== 'running' || !master) return null
+  if (!c || c.state !== 'running' || !dry || !wet) return null
   return c
 }
 
-/** Tono con envolvente y deslizamiento de frecuencia opcional */
-function tone(
-  c: AudioContext,
-  { f, to, t = 0, dur, vol = 0.2, type = 'sine', attack = 0.005 }: {
-    f: number; to?: number; t?: number; dur: number; vol?: number; type?: OscillatorType; attack?: number
-  },
-) {
-  const start = c.currentTime + t
-  const o = c.createOscillator()
-  const g = c.createGain()
-  o.type = type
-  o.frequency.setValueAtTime(f, start)
-  if (to) o.frequency.exponentialRampToValueAtTime(to, start + dur)
+/** Envía un nodo a la mezcla seca y a la reverb en la proporción indicada */
+function route(c: AudioContext, node: AudioNode, reverb: number) {
+  const d = c.createGain()
+  d.gain.value = 1
+  const w = c.createGain()
+  w.gain.value = reverb
+  node.connect(d).connect(dry!)
+  node.connect(w).connect(wet!)
+}
+
+function env(g: GainNode, start: number, attack: number, dur: number, vol: number) {
   g.gain.setValueAtTime(0.0001, start)
   g.gain.exponentialRampToValueAtTime(vol, start + attack)
   g.gain.exponentialRampToValueAtTime(0.0001, start + dur)
-  o.connect(g).connect(master!)
-  o.start(start)
-  o.stop(start + dur + 0.02)
 }
 
-/** Ruido filtrado (clics, golpes, papel, aire) */
-function noise(
-  c: AudioContext,
-  { t = 0, dur, vol = 0.2, filter = 'bandpass', f = 1500, to, q = 1 }: {
-    t?: number; dur: number; vol?: number; filter?: BiquadFilterType; f?: number; to?: number; q?: number
-  },
-) {
-  const start = c.currentTime + t
+/** Voz sinusoidal suave (con deslizamiento opcional) */
+function soft(c: AudioContext, o: { f: number; to?: number; t?: number; dur: number; vol?: number; attack?: number; reverb?: number; type?: OscillatorType }) {
+  const start = c.currentTime + (o.t ?? 0)
+  const osc = c.createOscillator()
+  const g = c.createGain()
+  osc.type = o.type ?? 'sine'
+  osc.frequency.setValueAtTime(o.f, start)
+  if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, start + o.dur * 0.9)
+  env(g, start, o.attack ?? 0.008, o.dur, o.vol ?? 0.12)
+  osc.connect(g)
+  route(c, g, o.reverb ?? 0.35)
+  osc.start(start)
+  osc.stop(start + o.dur + 0.05)
+}
+
+/** Campana de cristal: síntesis FM con brillo que se apaga antes que el cuerpo */
+function glass(c: AudioContext, o: { f: number; t?: number; dur?: number; vol?: number; reverb?: number; ratio?: number; index?: number }) {
+  const start = c.currentTime + (o.t ?? 0)
+  const dur = o.dur ?? 1.1
+  const car = c.createOscillator()
+  const mod = c.createOscillator()
+  const modGain = c.createGain()
+  const g = c.createGain()
+  car.frequency.value = o.f
+  mod.frequency.value = o.f * (o.ratio ?? 3.5)
+  const idx = o.f * (o.index ?? 1.4)
+  modGain.gain.setValueAtTime(idx, start)
+  modGain.gain.exponentialRampToValueAtTime(idx * 0.02, start + dur * 0.5)
+  mod.connect(modGain).connect(car.frequency)
+  env(g, start, 0.004, dur, o.vol ?? 0.07)
+  car.connect(g)
+  route(c, g, o.reverb ?? 0.6)
+  car.start(start)
+  mod.start(start)
+  car.stop(start + dur + 0.05)
+  mod.stop(start + dur + 0.05)
+}
+
+/** Acorde de colchón: sinusoides ligeramente desafinadas con ataque lento */
+function pad(c: AudioContext, freqs: number[], o: { t?: number; dur: number; vol?: number; attack?: number; reverb?: number }) {
+  for (const f of freqs) {
+    for (const det of [-6, 6]) {
+      const start = c.currentTime + (o.t ?? 0)
+      const osc = c.createOscillator()
+      const g = c.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = f
+      osc.detune.value = det
+      env(g, start, o.attack ?? 0.12, o.dur, (o.vol ?? 0.05) / freqs.length)
+      osc.connect(g)
+      route(c, g, o.reverb ?? 0.8)
+      osc.start(start)
+      osc.stop(start + o.dur + 0.05)
+    }
+  }
+}
+
+/** Aire: ruido filtrado que barre (transiciones, soplidos) */
+function air(c: AudioContext, o: { t?: number; dur: number; vol?: number; f: number; to?: number; q?: number; attack?: number; type?: BiquadFilterType; reverb?: number }) {
+  const start = c.currentTime + (o.t ?? 0)
   const src = c.createBufferSource()
   src.buffer = noiseBuf
   const bq = c.createBiquadFilter()
-  bq.type = filter
-  bq.frequency.setValueAtTime(f, start)
-  if (to) bq.frequency.exponentialRampToValueAtTime(to, start + dur)
-  bq.Q.value = q
+  bq.type = o.type ?? 'bandpass'
+  bq.Q.value = o.q ?? 0.9
+  bq.frequency.setValueAtTime(o.f, start)
+  if (o.to) bq.frequency.exponentialRampToValueAtTime(o.to, start + o.dur)
   const g = c.createGain()
-  g.gain.setValueAtTime(vol, start)
-  g.gain.exponentialRampToValueAtTime(0.0001, start + dur)
-  src.connect(bq).connect(g).connect(master!)
-  src.start(start, Math.random() * 0.5)
-  src.stop(start + dur + 0.02)
+  env(g, start, o.attack ?? o.dur * 0.4, o.dur, o.vol ?? 0.05)
+  src.connect(bq).connect(g)
+  route(c, g, o.reverb ?? 0.4)
+  src.start(start, Math.random())
+  src.stop(start + o.dur + 0.05)
 }
 
-const NOTE = (n: number) => 440 * Math.pow(2, (n - 69) / 12) // MIDI → Hz
+/** Clic táctil (como el "tic" de un selector del móvil) */
+function tick(c: AudioContext, o: { t?: number; f?: number; vol?: number }) {
+  const start = c.currentTime + (o.t ?? 0)
+  const osc = c.createOscillator()
+  const g = c.createGain()
+  osc.frequency.value = o.f ?? 1900
+  env(g, start, 0.001, 0.035, o.vol ?? 0.05)
+  osc.connect(g)
+  route(c, g, 0.1)
+  osc.start(start)
+  osc.stop(start + 0.05)
+}
+
+// Pentatónica de Re: D E F# A B
+const PENTA = [62, 64, 66, 69, 71]
+const hz = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12)
+const penta = (step: number, octave = 0) => hz(PENTA[((step % 5) + 5) % 5] + 12 * (octave + Math.floor(step / 5)))
 
 let stepCount = 0
 
 export const sfx = {
-  /** Cada casilla: golpecito de madera, alternando tono */
+  /** Cada casilla: clic táctil muy suave que sube por la escala */
   step() {
     const c = ready(); if (!c) return
     stepCount++
-    const base = stepCount % 2 ? 560 : 470
-    tone(c, { f: base, to: base * 0.7, dur: 0.07, vol: 0.16, type: 'triangle' })
-    noise(c, { dur: 0.025, vol: 0.06, f: 2600, q: 2 })
+    tick(c, { f: 1500 + (stepCount % 5) * 90, vol: 0.045 })
+    soft(c, { f: penta(stepCount % 5, 1), dur: 0.09, vol: 0.022, reverb: 0.15 })
   },
 
-  /** Dados: traqueteo en el cubilete y dos golpes al caer */
+  /** Dados: barrido de aire con granos digitales y aterrizaje en dos golpes suaves */
   dice() {
     const c = ready(); if (!c) return
-    for (let i = 0; i < 9; i++) {
-      const t = i * 0.075 + Math.random() * 0.03
-      noise(c, { t, dur: 0.035, vol: 0.12 + Math.random() * 0.06, f: 2400 + Math.random() * 1800, q: 4 })
-      tone(c, { t, f: 900 + Math.random() * 500, dur: 0.03, vol: 0.04, type: 'square' })
-    }
-    for (const t of [0.78, 0.9]) {
-      noise(c, { t, dur: 0.06, vol: 0.22, f: 1800, q: 1.5 })
-      tone(c, { t, f: 260, to: 150, dur: 0.08, vol: 0.18, type: 'triangle' })
-    }
+    air(c, { dur: 0.75, vol: 0.06, f: 600, to: 3200, q: 1.2 })
+    for (let i = 0; i < 10; i++) tick(c, { t: i * 0.065 + Math.random() * 0.02, f: 1400 + Math.random() * 1600, vol: 0.03 })
+    soft(c, { t: 0.8, f: 180, to: 110, dur: 0.18, vol: 0.16, reverb: 0.2 })
+    soft(c, { t: 0.92, f: 200, to: 120, dur: 0.16, vol: 0.12, reverb: 0.2 })
+    glass(c, { t: 0.95, f: penta(3, 2), dur: 0.7, vol: 0.035 })
   },
 
-  /** La ficha se posa en la casilla */
+  /** La ficha se posa: "bloop" grave y una nota de cristal */
   land() {
     const c = ready(); if (!c) return
-    tone(c, { f: 170, to: 70, dur: 0.16, vol: 0.32 })
-    noise(c, { dur: 0.09, vol: 0.12, filter: 'lowpass', f: 500 })
-    tone(c, { t: 0.05, f: 1320, dur: 0.18, vol: 0.05, type: 'sine' })
+    soft(c, { f: 260, to: 150, dur: 0.22, vol: 0.14, reverb: 0.3 })
+    glass(c, { t: 0.04, f: penta(0, 2), dur: 0.9, vol: 0.04 })
   },
 
-  /** Se abre una ventana: soplido ascendente */
+  /** Se abre una ventana: soplido que sube y destello de cristal */
   whoosh() {
     const c = ready(); if (!c) return
-    noise(c, { dur: 0.28, vol: 0.09, f: 350, to: 2600, q: 0.8 })
+    air(c, { dur: 0.42, vol: 0.05, f: 400, to: 4200, q: 0.7 })
+    glass(c, { t: 0.18, f: penta(4, 2), dur: 1, vol: 0.03 })
   },
 
-  /** Cobras: monedas que suben */
+  /** Cobras: arpegio ascendente de cristal con destellos */
   coinIn() {
     const c = ready(); if (!c) return
-    ;[88, 93, 96, 100].forEach((n, i) => {
-      tone(c, { t: i * 0.065, f: NOTE(n), dur: 0.16, vol: 0.11, type: 'triangle' })
-      tone(c, { t: i * 0.065, f: NOTE(n + 12), dur: 0.08, vol: 0.03, type: 'sine' })
-    })
+    ;[0, 2, 3, 5].forEach((s, i) => glass(c, { t: i * 0.07, f: penta(s, 2), dur: 1.1, vol: 0.055 }))
+    air(c, { t: 0.18, dur: 0.5, vol: 0.025, f: 7000, to: 11000, q: 2, attack: 0.05 })
   },
 
-  /** Pagas: monedas que caen, más grave */
+  /** Pagas: notas suaves que bajan, apagadas y en registro medio */
   coinOut() {
     const c = ready(); if (!c) return
-    ;[84, 79, 75, 72].forEach((n, i) => {
-      tone(c, { t: i * 0.07, f: NOTE(n), dur: 0.14, vol: 0.1, type: 'triangle' })
-    })
-    noise(c, { t: 0.28, dur: 0.08, vol: 0.05, f: 4000, q: 3 })
+    ;[4, 2, 0].forEach((s, i) => soft(c, { t: i * 0.09, f: penta(s, 1), dur: 0.35, vol: 0.07, attack: 0.01, reverb: 0.45, type: 'triangle' }))
+    air(c, { dur: 0.35, vol: 0.03, f: 2400, to: 600, q: 0.8 })
   },
 
-  /** Compra: caja registradora */
+  /** Compra: confirmación brillante (sexta mayor) con colchón */
   buy() {
     const c = ready(); if (!c) return
-    noise(c, { dur: 0.12, vol: 0.12, f: 3000, to: 1500, q: 2 })
-    tone(c, { t: 0.1, f: NOTE(96), dur: 0.7, vol: 0.12 })
-    tone(c, { t: 0.1, f: NOTE(100), dur: 0.7, vol: 0.09 })
-    tone(c, { t: 0.1, f: NOTE(103), dur: 0.6, vol: 0.06 })
+    glass(c, { f: penta(0, 2), dur: 1.3, vol: 0.06 })
+    glass(c, { t: 0.11, f: penta(4, 2), dur: 1.5, vol: 0.06 })
+    pad(c, [penta(0, 1), penta(3, 1), penta(4, 1)], { t: 0.05, dur: 1.4, vol: 0.06 })
   },
 
-  /** Carta: papel que se gira y campanita */
+  /** Carta: barrido de aire y acorde etéreo */
   card() {
     const c = ready(); if (!c) return
-    noise(c, { dur: 0.05, vol: 0.12, filter: 'highpass', f: 3000 })
-    noise(c, { t: 0.07, dur: 0.05, vol: 0.1, filter: 'highpass', f: 3500 })
-    tone(c, { t: 0.15, f: NOTE(81), dur: 0.35, vol: 0.08 })
-    tone(c, { t: 0.22, f: NOTE(88), dur: 0.4, vol: 0.07 })
+    air(c, { dur: 0.3, vol: 0.05, f: 1200, to: 6000, q: 0.6 })
+    pad(c, [penta(0, 1), penta(2, 1), penta(4, 1), penta(1, 2)], { t: 0.12, dur: 1.4, vol: 0.07, attack: 0.08 })
+    glass(c, { t: 0.2, f: penta(3, 2), dur: 1.2, vol: 0.04 })
   },
 
-  /** A la Ronda: sirena que baja y portazo metálico */
+  /** A la Ronda: caída grave, dos tonos menores y golpe sordo */
   jail() {
     const c = ready(); if (!c) return
-    tone(c, { f: 740, to: 520, dur: 0.28, vol: 0.12, type: 'sawtooth' })
-    tone(c, { t: 0.3, f: 620, to: 400, dur: 0.32, vol: 0.12, type: 'sawtooth' })
-    tone(c, { t: 0.66, f: 110, to: 70, dur: 0.25, vol: 0.25, type: 'square' })
-    noise(c, { t: 0.66, dur: 0.3, vol: 0.18, f: 2800, q: 6 })
+    soft(c, { f: 520, to: 180, dur: 0.6, vol: 0.1, attack: 0.03, reverb: 0.5 })
+    pad(c, [hz(57), hz(60), hz(64)], { t: 0.1, dur: 1.3, vol: 0.08, attack: 0.15 })
+    soft(c, { t: 0.55, f: 90, to: 50, dur: 0.35, vol: 0.22, reverb: 0.3 })
+    air(c, { t: 0.55, dur: 0.4, vol: 0.04, f: 300, to: 120, type: 'lowpass' })
   },
 
-  /** Construir: martillazos (hotel: uno más y campana) */
+  /** Construir: burbujas que suben (hotel: tres y destello) */
   build(hotel = false) {
     const c = ready(); if (!c) return
     const n = hotel ? 3 : 2
-    for (let i = 0; i < n; i++) {
-      noise(c, { t: i * 0.13, dur: 0.05, vol: 0.18, f: 1300, q: 3 })
-      tone(c, { t: i * 0.13, f: 240, to: 120, dur: 0.07, vol: 0.18, type: 'triangle' })
+    for (let i = 0; i < n; i++) soft(c, { t: i * 0.1, f: 300 + i * 120, to: 900 + i * 200, dur: 0.12, vol: 0.09, reverb: 0.3 })
+    if (hotel) {
+      glass(c, { t: 0.32, f: penta(0, 3), dur: 1.3, vol: 0.05 })
+      glass(c, { t: 0.4, f: penta(4, 2), dur: 1.3, vol: 0.04 })
     }
-    if (hotel) tone(c, { t: 0.42, f: NOTE(91), dur: 0.6, vol: 0.09 })
   },
 
-  /** Hipotecar: sello; deshipotecar: golpe ascendente */
+  /** Hipotecar: "candado" apagado; deshipotecar: se abre hacia arriba */
   mortgage(on: boolean) {
     const c = ready(); if (!c) return
     if (on) {
-      tone(c, { f: 140, to: 60, dur: 0.2, vol: 0.3 })
-      noise(c, { dur: 0.1, vol: 0.12, filter: 'lowpass', f: 900 })
+      tick(c, { f: 900, vol: 0.06 })
+      soft(c, { t: 0.02, f: 220, to: 130, dur: 0.25, vol: 0.12, reverb: 0.3 })
     } else {
-      tone(c, { f: 300, to: 600, dur: 0.15, vol: 0.12, type: 'triangle' })
+      soft(c, { f: 260, to: 520, dur: 0.22, vol: 0.09, reverb: 0.4 })
+      glass(c, { t: 0.1, f: penta(2, 2), dur: 0.8, vol: 0.035 })
     }
   },
 
-  /** Puja: toque de mazo */
+  /** Puja: clic con nota corta */
   bid() {
     const c = ready(); if (!c) return
-    tone(c, { f: 950, to: 600, dur: 0.06, vol: 0.18, type: 'triangle' })
-    noise(c, { dur: 0.03, vol: 0.1, f: 2000, q: 3 })
+    tick(c, { f: 2200, vol: 0.05 })
+    glass(c, { f: penta(1, 2), dur: 0.5, vol: 0.04 })
   },
 
-  /** Fin de subasta: dos golpes de mazo */
+  /** Fin de subasta: golpe suave; si se vende, campanas */
   gavel(sold: boolean) {
     const c = ready(); if (!c) return
-    const hits = sold ? [0, 0.18] : [0]
-    for (const t of hits) {
-      tone(c, { t, f: 700, to: 380, dur: 0.1, vol: 0.28, type: 'triangle' })
-      noise(c, { t, dur: 0.05, vol: 0.16, f: 1600, q: 2 })
+    soft(c, { f: 200, to: 110, dur: 0.25, vol: 0.16, reverb: 0.35 })
+    if (sold) {
+      glass(c, { t: 0.08, f: penta(0, 2), dur: 1.1, vol: 0.05 })
+      glass(c, { t: 0.18, f: penta(3, 2), dur: 1.2, vol: 0.05 })
     }
   },
 
-  /** Trato cerrado: dos notas que suben y acorde */
+  /** Trato cerrado: acorde que se abre hacia arriba */
   deal() {
     const c = ready(); if (!c) return
-    tone(c, { f: NOTE(76), dur: 0.15, vol: 0.13, type: 'triangle' })
-    tone(c, { t: 0.13, f: NOTE(80), dur: 0.15, vol: 0.13, type: 'triangle' })
-    ;[83, 88, 92].forEach((n) => tone(c, { t: 0.27, f: NOTE(n), dur: 0.5, vol: 0.07 }))
+    pad(c, [penta(0, 1), penta(2, 1), penta(3, 1), penta(1, 2)], { dur: 1.6, vol: 0.08, attack: 0.1 })
+    ;[0, 2, 4, 5].forEach((s, i) => glass(c, { t: 0.1 + i * 0.08, f: penta(s, 2), dur: 1.2, vol: 0.04 }))
   },
 
-  /** Trato rechazado: dos notas que bajan */
+  /** Trato rechazado: dos tonos suaves que bajan */
   noDeal() {
     const c = ready(); if (!c) return
-    tone(c, { f: NOTE(67), dur: 0.16, vol: 0.12, type: 'triangle' })
-    tone(c, { t: 0.15, f: NOTE(63), dur: 0.28, vol: 0.12, type: 'triangle' })
+    soft(c, { f: penta(3, 1), dur: 0.3, vol: 0.08, reverb: 0.4 })
+    soft(c, { t: 0.14, f: penta(1, 1), to: penta(0, 1), dur: 0.45, vol: 0.08, reverb: 0.4 })
   },
 
-  /** Grupo completo: arpegio de fiesta */
+  /** Grupo completo: cascada de cristal sobre un acorde amplio */
   fanfare() {
     const c = ready(); if (!c) return
-    ;[72, 76, 79, 84].forEach((n, i) => {
-      tone(c, { t: i * 0.09, f: NOTE(n), dur: 0.22, vol: 0.13, type: 'triangle' })
-      tone(c, { t: i * 0.09, f: NOTE(n - 12), dur: 0.2, vol: 0.05, type: 'square' })
-    })
-    ;[84, 88, 91].forEach((n) => tone(c, { t: 0.38, f: NOTE(n), dur: 0.7, vol: 0.07 }))
+    pad(c, [penta(0, 0), penta(3, 0), penta(0, 1), penta(2, 1)], { dur: 2, vol: 0.1, attack: 0.15 })
+    ;[0, 1, 2, 3, 4, 5, 7].forEach((s, i) => glass(c, { t: i * 0.06, f: penta(s, 2), dur: 1.4, vol: 0.045 }))
+    air(c, { t: 0.3, dur: 1, vol: 0.025, f: 6000, to: 12000, q: 1.5 })
   },
 
-  /** Bancarrota: trombón triste */
+  /** Bancarrota: caída lenta en menor que se apaga */
   bankrupt() {
     const c = ready(); if (!c) return
-    const notes = [67, 66, 65]
-    notes.forEach((n, i) => tone(c, { t: i * 0.38, f: NOTE(n), dur: 0.34, vol: 0.14, type: 'sawtooth', attack: 0.03 }))
-    tone(c, { t: 1.14, f: NOTE(64), to: NOTE(59), dur: 1.1, vol: 0.14, type: 'sawtooth', attack: 0.03 })
+    pad(c, [hz(50), hz(57), hz(60), hz(65)], { dur: 2.6, vol: 0.12, attack: 0.2 })
+    soft(c, { f: 440, to: 110, dur: 1.8, vol: 0.06, attack: 0.1, reverb: 0.7 })
+    air(c, { dur: 2, vol: 0.03, f: 2000, to: 200, q: 0.7, attack: 0.3 })
   },
 
-  /** Victoria */
+  /** Victoria: progresión de acordes con destellos */
   victory() {
     const c = ready(); if (!c) return
-    const seq: [number, number, number][] = [[72, 0, 0.14], [72, 0.15, 0.14], [72, 0.3, 0.14], [76, 0.45, 0.4], [74, 0.9, 0.14], [76, 1.05, 0.14], [79, 1.2, 0.8]]
-    for (const [n, t, d] of seq) {
-      tone(c, { t, f: NOTE(n), dur: d, vol: 0.14, type: 'triangle' })
-      tone(c, { t, f: NOTE(n - 12), dur: d, vol: 0.05, type: 'square' })
-    }
-    ;[79, 84, 88].forEach((n) => tone(c, { t: 1.2, f: NOTE(n), dur: 1.2, vol: 0.06 }))
+    pad(c, [penta(0, 0), penta(3, 0), penta(2, 1)], { dur: 1.2, vol: 0.1, attack: 0.1 })
+    pad(c, [penta(4, -1), penta(1, 0), penta(4, 0)], { t: 0.9, dur: 1.2, vol: 0.1, attack: 0.1 })
+    pad(c, [penta(0, 0), penta(3, 0), penta(0, 1), penta(2, 1)], { t: 1.8, dur: 2.4, vol: 0.12, attack: 0.15 })
+    ;[0, 2, 3, 5, 7, 8, 10].forEach((s, i) => glass(c, { t: 1.8 + i * 0.07, f: penta(s, 2), dur: 1.6, vol: 0.045 }))
   },
 
-  /** Botón no disponible */
+  /** Botón no disponible: "bump" grave como una vibración */
   deny() {
     const c = ready(); if (!c) return
-    tone(c, { f: 150, dur: 0.1, vol: 0.08, type: 'square' })
+    soft(c, { f: 170, to: 120, dur: 0.12, vol: 0.12, reverb: 0.05 })
   },
 
   /** Prueba al activar el sonido */

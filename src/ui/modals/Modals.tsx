@@ -5,6 +5,7 @@ import { useGame } from '../../store/gameStore'
 import { ActionButton, Money, Popup, Sheet } from '../primitives'
 import { TileCard } from '../TileCard'
 import { TokenIcon } from '../Token'
+import { sfx } from '../../audio/sfx'
 import { LangToggle, SoundToggle } from '../Header'
 import { useT } from '../useT'
 
@@ -115,6 +116,30 @@ export function GameOverModal() {
   )
 }
 
+const SOUND_PREVIEW: [string, () => void][] = [
+  ['sound.step', () => { for (let i = 0; i < 5; i++) setTimeout(sfx.step, i * 270) }],
+  ['sound.dice', sfx.dice],
+  ['sound.land', sfx.land],
+  ['sound.popup', sfx.whoosh],
+  ['sound.card', sfx.card],
+  ['sound.pay', sfx.coinOut],
+  ['sound.receive', sfx.coinIn],
+  ['sound.buy', sfx.buy],
+  ['sound.build', () => sfx.build(false)],
+  ['sound.hotel', () => sfx.build(true)],
+  ['sound.mortgage', () => sfx.mortgage(true)],
+  ['sound.unmortgage', () => sfx.mortgage(false)],
+  ['sound.bid', sfx.bid],
+  ['sound.sold', () => sfx.gavel(true)],
+  ['sound.deal', sfx.deal],
+  ['sound.noDeal', sfx.noDeal],
+  ['sound.jail', sfx.jail],
+  ['sound.group', sfx.fanfare],
+  ['sound.bankrupt', sfx.bankrupt],
+  ['sound.victory', sfx.victory],
+  ['sound.deny', sfx.deny],
+]
+
 export function MenuModal() {
   const setModal = useGame((s) => s.setModal)
   const quit = useGame((s) => s.quitGame)
@@ -131,6 +156,16 @@ export function MenuModal() {
           <span>{t('ui.sound')}</span>
           <SoundToggle />
         </div>
+        <details className="rounded-xl bg-white px-3 py-2">
+          <summary className="cursor-pointer py-1 font-semibold">{t('sound.preview')}</summary>
+          <div className="grid grid-cols-2 gap-2 py-2">
+            {SOUND_PREVIEW.map(([key, play]) => (
+              <button key={key} type="button" onClick={play} className="min-h-10 rounded-lg bg-arena px-2 text-left text-sm font-semibold">
+                ▶ {t(key)}
+              </button>
+            ))}
+          </div>
+        </details>
         <ActionButton onClick={() => setModal({ type: 'help' })}>{t('ui.help')}</ActionButton>
         <ActionButton onClick={quit}>{t('menu.exit')}</ActionButton>
         <p className="text-sm opacity-70">{t('menu.saved')}</p>
