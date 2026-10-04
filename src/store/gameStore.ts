@@ -65,6 +65,8 @@ interface Store {
   celebrate: number
   /** Dados rodando */
   rolling: boolean
+  /** Contador de tiradas: cada tirada lanza de nuevo la animación 3D */
+  rollSeq: number
   /** Casilla donde acaba de posarse una ficha (brilla) */
   landingAt: { tile: number; playerId: string } | null
   /** Monedas volando entre jugadores */
@@ -172,7 +174,7 @@ export const useGame = create<Store>((set, get) => {
         next(400)
         return
       case 'dice':
-        set({ queue: queue.slice(1), rolling: true, landingAt: null })
+        set({ queue: queue.slice(1), rolling: true, landingAt: null, rollSeq: get().rollSeq + 1 })
         stepTimer = setTimeout(() => {
           stepTimer = null
           set({ rolling: false })
@@ -234,6 +236,7 @@ export const useGame = create<Store>((set, get) => {
     shownLanding: null,
     modal: { type: 'none' },
     rolling: false,
+    rollSeq: 0,
     landingAt: null,
     moneyFx: [],
     displayMoney: {},

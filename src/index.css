@@ -76,18 +76,6 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 @keyframes ripple { from { transform: scale(1); opacity: 1 } to { transform: scale(2.6); opacity: 0 } }
 
-/* Dados que ruedan y se asientan */
-@keyframes dice-roll {
-  0% { transform: translate(0, 0) rotate(0) }
-  25% { transform: translate(-6%, -14%) rotate(-25deg) }
-  50% { transform: translate(5%, 4%) rotate(20deg) }
-  75% { transform: translate(-3%, -8%) rotate(-12deg) }
-  100% { transform: translate(0, 0) rotate(0) }
-}
-.dice-roll { animation: dice-roll 300ms linear infinite }
-.dice-roll-b { animation-direction: reverse; animation-duration: 340ms }
-@keyframes dice-settle { 0% { transform: scale(1.25) rotate(8deg) } 60% { transform: scale(0.94) rotate(-2deg) } 100% { transform: none } }
-.dice-settle { animation: dice-settle 380ms cubic-bezier(.3,1.5,.5,1) }
 
 /* Monedas y etiquetas de dinero */
 .money-coin {
@@ -146,9 +134,34 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile-land, .token-hop, .token-land, .token-land::after, .dice-roll, .dice-settle,
-  .money-flash-up, .money-flash-down, .backdrop-in, .pop-shine > article::after, .coin-run { animation: none !important }
+  .tile-land, .token-hop, .token-land, .token-land::after,   .money-flash-up, .money-flash-down, .backdrop-in, .pop-shine > article::after, .coin-run { animation: none !important }
   .coin-run { opacity: 1; left: 40% }
 }
 @keyframes banner-life { 0% { opacity: 0; transform: scale(.6) } 12% { opacity: 1; transform: scale(1.1) } 20% { transform: scale(1) } 80% { opacity: 1 } 100% { opacity: 0; transform: translateY(-20px) } }
 .banner-life { animation: banner-life 2400ms ease-out forwards }
+
+/* ===================== Dados 3D ===================== */
+.die-scene {
+  --die: 17cqw;
+  position: relative; width: var(--die); height: var(--die); isolation: isolate;
+  perspective: 700px;
+}
+.die-cube {
+  position: absolute; inset: 0; transform-style: preserve-3d;
+  transition: transform 1000ms cubic-bezier(.12,.62,.2,1);
+}
+.die-face {
+  position: absolute; inset: 0; border-radius: 14%;
+  background: radial-gradient(circle at 30% 25%, #FFFFFF 0 35%, #F3EEE4 100%);
+  box-shadow: inset 0 0 0 1px rgba(26,26,46,.25), inset 0 -6px 12px rgba(26,26,46,.12);
+  backface-visibility: hidden; padding: 6%;
+}
+.die-fill { position: absolute; inset: 1%; border-radius: 6%; background: #EDE6D8; backface-visibility: hidden }
+.die-hop { position: absolute; inset: 0; transform-style: preserve-3d }
+.die-shadow {
+  position: absolute; left: 8%; right: 8%; bottom: -16%; height: 16%; border-radius: 50%; z-index: -1;
+  background: radial-gradient(closest-side, rgba(26,26,46,.35), transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .die-cube { transition: none }
+}

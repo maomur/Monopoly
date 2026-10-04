@@ -1,101 +1,120 @@
-import { useEffect, useState } from 'react'
-import { BOARD, GROUP_COLORS } from '../engine/board'
-import { isOwnable } from '../engine/types'
+// Centro del tablero: solo los dados, en 3D.
+// Al tirar, cada dado da varias vueltas en el aire y frena hasta quedar con la cara que ha salido.
+import { useEffect, useMemo, useRef } from 'react'
 import { useGame } from '../store/gameStore'
-import { logText, tileName } from './format'
-import { useT } from './useT'
 
 const PIPS: Record<number, [number, number][]> = {
   1: [[50, 50]],
-  2: [[28, 28], [72, 72]],
+  2: [[27, 27], [73, 73]],
   3: [[25, 25], [50, 50], [75, 75]],
-  4: [[28, 28], [72, 28], [28, 72], [72, 72]],
+  4: [[27, 27], [73, 27], [27, 73], [73, 73]],
   5: [[25, 25], [75, 25], [50, 50], [25, 75], [75, 75]],
-  6: [[28, 22], [72, 22], [28, 50], [72, 50], [28, 78], [72, 78]],
+  6: [[27, 22], [73, 22], [27, 50], [73, 50], [27, 78], [73, 78]],
 }
 
-export function Die({ value }: { value: number }) {
+/**
+ * Posición de cada cara en el cubo (dado real: caras opuestas suman 7)
+ * y giro que la deja mirando al frente.
+ */
+const FACES: { value: number; place: string; show: [number, number] }[] = [
+  { value: 1, place: 'rotateY(0deg)', show: [0, 0] },
+  { value: 6, place: 'rotateY(180deg)', show: [0, 180] },
+  { value: 2, place: 'rotateY(90deg)', show: [0, -90] },
+  { value: 5, place: 'rotateY(-90deg)', show: [0, 90] },
+  { value: 3, place: 'rotateX(90deg)', show: [-90, 0] },
+  { value: 4, place: 'rotateX(-90deg)', show: [90, 0] },
+]
+
+function Face({ value, place }: { value: number; place: string }) {
   return (
-    <svg viewBox="0 0 100 100" className="h-full w-full drop-shadow" role="img" aria-label={String(value)}>
-      <rect x="4" y="4" width="92" height="92" rx="18" fill="#fff" stroke="#1A1A2E" strokeWidth="4" />
-      {PIPS[value].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="9" fill="#C8553D" />
-      ))}
-    </svg>
+    <>
+      {/* Relleno interior: tapa el hueco de las esquinas redondeadas al girar */}
+      <div className="die-fill" style={{ transform: `${place} translateZ(calc(var(--die) / 2 - 2px))` }} />
+    <div className="die-face" style={{ transform: `${place} translateZ(calc(var(--die) / 2))` }}>
+      <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
+        {PIPS[value].map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r="9.5" fill={value === 1 ? '#B0442D' : '#1A1A2E'} />
+        ))}
+      </svg>
+    </div>
+    </>
   )
 }
 
-/** Caras aleatorias mientras los dados ruedan */
-function useTumble(rolling: boolean): [number, number] {
-  const [faces, setFaces] = useState<[number, number]>([1, 1])
+/** Generador determinista por tirada para que el giro no cambie entre renders */
+function rand(seed: number) {
+  const x = Math.sin(seed * 9301 + 49297) * 233280
+  return x - Math.floor(x)
+}
+
+function Die3D({ value, seq, index }: { value: number; seq: number; index: number }) {
+  const transform = useMemo(() => {
+    const [sx, sy] = FACES.find((f) => f.value === value)!.show
+    // Vueltas completas acumuladas: cada tirada gira hacia delante, nunca hacia atrás
+    const r = (k: number) => rand(seq * 7 + index * 13 + k)
+    const turnsX = seq * 3 + 2 + Math.floor(r(1) * 2)
+    const turnsY = seq * 3 + 2 + Math.floor(r(2) * 3)
+    const turnsZ = seq === 0 ? 0 : 1 + Math.floor(r(3) * 2)
+    // Pequeña inclinación final para que no parezcan pegados al tablero
+    const tilt = seq === 0 ? 0 : (r(4) - 0.5) * 16
+    // Orden: primero deja la cara al frente (Y, X), luego inclina hacia el jugador y gira en el plano (Z)
+    return `rotateZ(${360 * turnsZ + tilt}deg) rotateX(${sx + 360 * turnsX - 20}deg) rotateY(${sy + 360 * turnsY}deg)`
+  }, [value, seq, index])
+
+  // El cubo no se vuelve a montar (si no, no habría transición de giro): el salto se lanza a mano
+  const hop = useRef<HTMLDivElement>(null)
+  const shadow = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (!rolling) return
-    const id = setInterval(() => {
-      setFaces([1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)])
-    }, 85)
-    return () => clearInterval(id)
-  }, [rolling])
-  return faces
+    if (seq === 0) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const dur = index === 0 ? 1000 : 1060
+    const dir = index === 0 ? -1 : 1
+    hop.current?.animate(
+      [
+        { transform: 'translate(0, 0)' },
+        { transform: `translate(${dir * 10}%, -75%)`, offset: 0.28 },
+        { transform: `translate(${dir * -3}%, 0)`, offset: 0.58 },
+        { transform: `translate(${dir * -2}%, -16%)`, offset: 0.72 },
+        { transform: 'translate(0, 0)', offset: 0.86 },
+        { transform: 'translate(0, -4%)', offset: 0.93 },
+        { transform: 'translate(0, 0)' },
+      ],
+      { duration: dur, easing: 'cubic-bezier(.3,.6,.4,1)' },
+    )
+    shadow.current?.animate(
+      [
+        { transform: 'scale(1)', opacity: 1 },
+        { transform: 'scale(.4)', opacity: 0.3, offset: 0.28 },
+        { transform: 'scale(1.05)', opacity: 1, offset: 0.58 },
+        { transform: 'scale(.8)', opacity: 0.7, offset: 0.72 },
+        { transform: 'scale(1)', opacity: 1 },
+      ],
+      { duration: dur, easing: 'cubic-bezier(.3,.6,.4,1)' },
+    )
+  }, [seq, index])
+
+  return (
+    <div className="die-scene" aria-label={String(value)} role="img">
+      <div ref={hop} className="die-hop">
+        <div className="die-cube" style={{ transform }}>
+          {FACES.map((f) => (
+            <Face key={f.value} value={f.value} place={f.place} />
+          ))}
+        </div>
+      </div>
+      <div ref={shadow} className="die-shadow" />
+    </div>
+  )
 }
 
 export function CenterPanel() {
-  const game = useGame((s) => s.game)!
-  const busy = useGame((s) => s.busy)
-  const rolling = useGame((s) => s.rolling)
-  const tumble = useTumble(rolling)
-  const lang = useGame((s) => s.lang)
-  const t = useT()
-  const p = game.players[game.current]
-  // Mientras la ficha se mueve no desvelamos la casilla de destino
-  const landed = !busy ? game.lastLanded : null
-  const tile = landed !== null ? BOARD[landed] : null
-  // Mientras se anima, no adelantamos lo que va a pasar
-  const recent = busy ? [] : game.log.slice(-2).reverse()
-
+  const dice = useGame((s) => s.game?.dice) ?? null
+  const seq = useGame((s) => s.rollSeq)
+  const [a, b] = dice ?? [5, 2]
   return (
-    <div className="flex h-full flex-col items-center justify-between gap-[0.4em] bg-arena p-[0.8em] text-center text-[1.15em]">
-      <div className="flex w-full items-center justify-center gap-2 font-display font-semibold">
-        <span className="inline-block h-[0.9em] w-[0.9em] rounded-full" style={{ background: p.color }} />
-        <span className="truncate">{t('ui.turnOf', { name: p.name })}</span>
-        <span className="text-[0.8em] font-normal opacity-70">· {t('ui.round', { n: game.round })}</span>
-      </div>
-
-      <div className="flex h-[22%] items-center gap-[0.6em]">
-        {game.dice ? (
-          <>
-            <div className={`aspect-square h-full ${rolling ? 'dice-roll' : 'dice-settle'}`}><Die value={rolling ? tumble[0] : game.dice[0]} /></div>
-            <div className={`aspect-square h-full ${rolling ? 'dice-roll dice-roll-b' : 'dice-settle'}`}><Die value={rolling ? tumble[1] : game.dice[1]} /></div>
-          </>
-        ) : (
-          <span className="font-display text-[1.6em] font-bold text-mar">BCN Tycoon</span>
-        )}
-      </div>
-
-      {tile ? (
-        <div className="w-full max-w-[95%] overflow-hidden rounded-lg border border-ink/20 bg-white shadow-sm">
-          {tile.kind === 'property' && (
-            <div className="h-[0.6em]" style={{ background: GROUP_COLORS[tile.group].bg }} />
-          )}
-          <div className="p-[0.4em]">
-            <div className="font-display font-semibold leading-tight">{tileName(lang, tile.index)}</div>
-            {isOwnable(tile) && (
-              <p className="mt-[0.2em] text-[0.82em] leading-snug italic opacity-80 line-clamp-3">
-                {t(tile.factKey)}
-              </p>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="flex-1" />
-      )}
-
-      <ul className="w-full space-y-[0.15em] text-[0.82em] leading-snug" aria-live="polite">
-        {recent.map((e) => (
-          <li key={e.id} className="line-clamp-2 first:font-semibold last:opacity-60">
-            {logText(lang, e)}
-          </li>
-        ))}
-      </ul>
+    <div className="flex h-full items-center justify-center gap-[9%] bg-arena">
+      <Die3D value={a} seq={seq} index={0} />
+      <Die3D value={b} seq={seq} index={1} />
     </div>
   )
 }
