@@ -38,7 +38,7 @@ const BAR_CLASS = {
   right: 'left-0 top-0 bottom-0 w-[22%]',
 }
 
-function Cell({ game, index, current }: { game: GameState; index: number; current: boolean }) {
+function Cell({ game, index, current, landing }: { game: GameState; index: number; current: boolean; landing: boolean }) {
   const lang = useGame((s) => s.lang)
   const setModal = useGame((s) => s.setModal)
   const t = BOARD[index]
@@ -50,6 +50,7 @@ function Cell({ game, index, current }: { game: GameState; index: number; curren
   return (
     <button
       type="button"
+      data-tile={index}
       onClick={() => setModal({ type: 'tile', index })}
       aria-label={tileName(lang, index)}
       className={[
@@ -57,6 +58,7 @@ function Cell({ game, index, current }: { game: GameState; index: number; curren
         'flex items-center justify-center p-[2px] text-center leading-[1.05]',
         corner ? 'bg-sol/40 font-bold' : '',
         current ? 'ring-2 ring-inset ring-terracota' : '',
+        landing ? 'tile-land' : '',
         own?.mortgaged ? 'opacity-55' : '',
       ].join(' ')}
       style={{ gridRow: row + 1, gridColumn: col + 1 }}
@@ -92,6 +94,7 @@ export function Board() {
   const game = useGame((s) => s.game)!
   const displayPos = useGame((s) => s.displayPos)
   const zoom = useGame((s) => s.zoom)
+  const landingAt = useGame((s) => s.landingAt)
   const scroller = useRef<HTMLDivElement>(null)
   const current = game.players[game.current]
   const focusPos = displayPos[game.current] ?? current.position
@@ -134,7 +137,7 @@ export function Board() {
           }}
         >
           {BOARD.map((t) => (
-            <Cell key={t.index} game={game} index={t.index} current={t.index === focusPos} />
+            <Cell key={t.index} game={game} index={t.index} current={t.index === focusPos} landing={landingAt?.tile === t.index} />
           ))}
           <div className="overflow-hidden" style={{ gridRow: '2 / 11', gridColumn: '2 / 11' }}>
             <CenterPanel />
@@ -150,19 +153,27 @@ export function Board() {
             return (
               <div
                 key={p.id}
-                className="pointer-events-none absolute z-10 flex items-center justify-center rounded-full border-2 border-white shadow-md transition-[left,top] duration-150 ease-out"
+                data-token={p.id}
+                className="pointer-events-none absolute z-10 transition-[left,top] duration-[240ms] ease-out"
                 style={{
                   left: `calc(${x + off}% - var(--tok) / 2)`,
                   top: `calc(${y + off * 0.6}% - var(--tok) / 2)`,
                   width: 'var(--tok)',
                   height: 'var(--tok)',
-                  background: p.color,
                   color: '#fff',
                   ['--tok' as string]: zoom ? '6%' : '6.2%',
-                  outline: pi === game.current ? '2px solid #1A1A2E' : undefined,
                 }}
               >
-                <TokenIcon token={p.token} className="h-[78%] w-[78%]" />
+                {/* key = casilla: al cambiar de casilla la animación de salto se repite */}
+                <span
+                  key={Number(pos)}
+                  className={`flex h-full w-full items-center justify-center rounded-full border-2 border-white shadow-md ${
+                    landingAt?.playerId === p.id ? 'token-land' : 'token-hop'
+                  }`}
+                  style={{ background: p.color, outline: pi === game.current ? '2px solid #1A1A2E' : undefined }}
+                >
+                  <TokenIcon token={p.token} className="h-[78%] w-[78%]" />
+                </span>
               </div>
             )
           }),

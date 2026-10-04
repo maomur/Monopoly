@@ -1,16 +1,17 @@
 // Ventanas emergentes de la partida: caer en una casilla y todas las decisiones
 // (comprar, subastar, deuda, intercambio, salir de la Ronda).
-import { useState, type ReactNode } from 'react'
-import { JAIL_FINE } from '../../engine/board'
+import { useEffect, useState, type ReactNode } from 'react'
+import { BOARD, JAIL_FINE } from '../../engine/board'
 import { actorId } from '../../engine/bot'
-import { getPlayer, ownableTile } from '../../engine/queries'
+import { countOwnedOfKind, getPlayer, ownableTile, ownsFullGroup } from '../../engine/queries'
 import {
   canBankrupt, canBuy, canPayDebt, canPayJail, canRoll, canUseJailCard, minBid,
 } from '../../engine/validate'
-import { useGame } from '../../store/gameStore'
+import { useGame, type LandEvent } from '../../store/gameStore'
+import { tileName } from '../format'
 import { TradeSummary } from '../modals/TradeModal'
 import { ActionButton, Money, Popup } from '../primitives'
-import { TileCard } from '../TileCard'
+import { TileCard, tileColors } from '../TileCard'
 import { TokenIcon } from '../Token'
 import { useT } from '../useT'
 
@@ -67,6 +68,112 @@ function ManageLink() {
 
 // ---------- Caer en una casilla (informativo) ----------
 
+/** Cifra que sube de 0 al valor al abrirse la ventana */
+function CountUp({ value }: { value: number }) {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setN(value)
+      return
+    }
+    const start = performance.now()
+    let raf = 0
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / 900)
+      setN(Math.round(value * (1 - Math.pow(1 - t, 3))))
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+  return <Money amount={n} />
+}
+
+function Avatar({ id }: { id: string | null }) {
+  const game = useGame((s) => s.game)!
+  const t = useT()
+  if (!id) {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <span className="grid h-14 w-14 place-items-center rounded-full bg-mar-deep text-white shadow-lg ring-4 ring-white">
+          {/* Banca: edificio con columnas */}
+          <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden="true" fill="currentColor">
+            <path d="M12 2 2 7v2h20V7z" />
+            <rect x="4" y="10" width="2.5" height="8" />
+            <rect x="9" y="10" width="2.5" height="8" />
+            <rect x="13.5" y="10" width="2.5" height="8" />
+            <rect x="18" y="10" width="2.5" height="8" />
+            <rect x="2" y="19" width="20" height="3" />
+          </svg>
+        </span>
+        <span className="text-sm font-semibold">{t('payment.bank')}</span>
+      </div>
+    )
+  }
+  const p = getPlayer(game, id)
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-1">
+      <span className="grid h-14 w-14 place-items-center rounded-full text-white shadow-lg ring-4 ring-white" style={{ background: p.color }}>
+        <TokenIcon token={p.token} className="h-9 w-9" />
+      </span>
+      <span className="max-w-24 truncate text-sm font-semibold">{p.name}</span>
+    </div>
+  )
+}
+
+/** Por qué se paga esa cantidad (casas, grupo, transportes…) */
+function rentReason(t: (k: string, v?: Record<string, string | number>) => string, game: ReturnType<typeof useGame.getState>['game'], tile: number, amount: number): string {
+  const g = game!
+  const own = g.ownership[tile]
+  const info = BOARD[tile]
+  if (!own?.owner) return ''
+  if (info.kind === 'property') {
+    if (own.houses === 5) return t('build.hotel')
+    if (own.houses > 0) return t('build.houses', { n: own.houses })
+    return ownsFullGroup(g, own.owner, info.group) ? t('tile.groupDouble') : t('tile.rentBase')
+  }
+  if (info.kind === 'transport') return t('tile.transportN', { n: countOwnedOfKind(g, own.owner, 'transport') })
+  if (info.kind === 'utility' && g.dice) return t('payment.utility', { d: g.dice[0] + g.dice[1], m: Math.round(amount / (g.dice[0] + g.dice[1])) })
+  return ''
+}
+
+/** Recibo de pago: quién paga, a quién, cuánto y por qué. Sin toda la ficha. */
+function PaymentTicket({ e, footer }: { e: LandEvent; footer: ReactNode }) {
+  const game = useGame((s) => s.game)!
+  const lang = useGame((s) => s.lang)
+  const t = useT()
+  const colors = tileColors(e.tile)
+  const amount = e.amount ?? 0
+  const reason = e.outcome === 'rent' ? rentReason(t, game, e.tile, amount) : ''
+  return (
+    <article className="ticket overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/10">
+      <header className="px-4 py-2.5 text-center" style={{ background: colors.bg, color: colors.text }}>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] opacity-85">
+          {e.outcome === 'rent' ? t('payment.rent') : t('payment.tax')}
+        </p>
+        <h2 id="landing-title" className="font-display text-xl font-bold leading-tight">{tileName(lang, e.tile)}</h2>
+      </header>
+      <div className="px-4 pb-4 pt-4">
+        <div className="flex items-start justify-between gap-2">
+          <Avatar id={e.playerId} />
+          <div className="coin-track relative mt-5 h-6 flex-1" aria-hidden="true">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <span key={i} className="coin-run" style={{ animationDelay: `${i * 180}ms` }}>€</span>
+            ))}
+          </div>
+          <Avatar id={e.toId ?? null} />
+        </div>
+        <p className="mt-3 text-center font-display text-5xl font-bold text-terracota">
+          <CountUp value={amount} />
+        </p>
+        {reason && <p className="mt-1 text-center text-sm opacity-75">{reason}</p>}
+      </div>
+      <div className="ticket-perf" aria-hidden="true" />
+      <footer className="space-y-2 bg-arena/60 px-4 py-3">{footer}</footer>
+    </article>
+  )
+}
+
 export function LandingPopup() {
   const e = useGame((s) => s.shownLanding)!
   const game = useGame((s) => s.game)!
@@ -74,11 +181,8 @@ export function LandingPopup() {
   const setModal = useGame((s) => s.setModal)
   const t = useT()
   const p = getPlayer(game, e.playerId)
-  const to = e.toId ? getPlayer(game, e.toId) : null
 
   const headlines: Record<string, ReactNode> = {
-    rent: <>{t('landing.rent', { name: p.name, owner: to?.name ?? '' })} <Money amount={e.amount ?? 0} className="text-sol" /></>,
-    tax: <>{t('landing.tax', { name: p.name })} <Money amount={e.amount ?? 0} className="text-sol" /></>,
     own: t('landing.own', { name: p.name }),
     mortgaged: t('landing.mortgaged', { name: p.name }),
     goToJail: t('landing.goToJail', { name: p.name }),
@@ -86,36 +190,43 @@ export function LandingPopup() {
     visit: t('landing.visit', { name: p.name }),
   }
 
+  const footer = p.isBot ? (
+    <div className="flex items-center gap-3">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">
+        <div className="bot-timer h-full rounded-full bg-mar" />
+      </div>
+      <ActionButton ignoreBusy onClick={dismiss}>{t('ui.ok')}</ActionButton>
+    </div>
+  ) : (
+    <>
+      <ActionButton ignoreBusy big variant="primary" className="w-full" onClick={dismiss}>
+        {e.outcome === 'rent' || e.outcome === 'tax' ? t('payment.pay') : t('ui.continue')}
+      </ActionButton>
+      {e.outcome === 'own' && (
+        <ActionButton
+          ignoreBusy
+          variant="ghost"
+          className="w-full"
+          onClick={() => {
+            dismiss()
+            setModal({ type: 'manage' })
+          }}
+        >
+          {t('action.manage')}
+        </ActionButton>
+      )}
+    </>
+  )
+
   return (
-    <Popup onClose={dismiss} labelledBy="landing-title">
-      <TileCard index={e.tile} titleId="landing-title" headline={headlines[e.outcome]}>
-        {p.isBot ? (
-          <div className="flex items-center gap-3">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">
-              <div className="bot-timer h-full rounded-full bg-mar" />
-            </div>
-            <ActionButton ignoreBusy onClick={dismiss}>{t('ui.ok')}</ActionButton>
-          </div>
-        ) : (
-          <>
-            <ActionButton ignoreBusy big variant="primary" className="w-full" onClick={dismiss}>
-              {t('ui.continue')}
-            </ActionButton>
-            {e.outcome === 'own' && (
-              <ActionButton
-                variant="ghost"
-                className="w-full"
-                onClick={() => {
-                  dismiss()
-                  setModal({ type: 'manage' })
-                }}
-              >
-                {t('action.manage')}
-              </ActionButton>
-            )}
-          </>
-        )}
-      </TileCard>
+    <Popup onClose={dismiss} labelledBy="landing-title" originTile={e.tile}>
+      {e.outcome === 'rent' || e.outcome === 'tax' ? (
+        <PaymentTicket e={e} footer={footer} />
+      ) : (
+        <TileCard index={e.tile} titleId="landing-title" compact headline={headlines[e.outcome]}>
+          {footer}
+        </TileCard>
+      )}
     </Popup>
   )
 }
@@ -129,7 +240,7 @@ function BuyPopup() {
   const p = game.players[game.current]
   const tile = ownableTile(p.position)
   return (
-    <Popup labelledBy="buy-title">
+    <Popup labelledBy="buy-title" originTile={tile.index}>
       <TileCard index={tile.index} titleId="buy-title" headline={t('popup.forSale')}>
         <p className="text-center text-sm">
           <Who id={p.id} /> · {t('ui.cash')}: <Money amount={p.money} className="font-bold" />
@@ -163,7 +274,7 @@ function AuctionPopup() {
   )
 
   return (
-    <Popup labelledBy="auction-title">
+    <Popup labelledBy="auction-title" originTile={a.tile}>
       <TileCard index={a.tile} titleId="auction-title" compact headline={t('popup.auction')}>
         <div className="grid grid-cols-2 gap-2 text-center text-sm">
           <div className="rounded-xl bg-white p-2 ring-1 ring-ink/10">

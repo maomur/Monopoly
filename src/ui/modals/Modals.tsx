@@ -13,7 +13,7 @@ export function TileModal({ index }: { index: number }) {
   const t = useT()
   const close = () => setModal({ type: 'none' })
   return (
-    <Popup onClose={close} labelledBy="tile-title">
+    <Popup onClose={close} labelledBy="tile-title" originTile={index}>
       <TileCard index={index} titleId="tile-title">
         <ActionButton className="w-full" onClick={close}>{t('ui.close')}</ActionButton>
       </TileCard>

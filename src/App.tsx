@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import { useGame } from './store/gameStore'
 import { ActionBar } from './ui/ActionBar'
 import { Board } from './ui/Board'
+import { Confetti } from './ui/Confetti'
+import { MoneyLayer } from './ui/MoneyFx'
 import { Header } from './ui/Header'
 import { ManageModal } from './ui/modals/ManageModal'
 import {
@@ -29,11 +31,22 @@ function Toast() {
 
 function Celebrate() {
   const celebrate = useGame((s) => s.celebrate)
+  const over = useGame((s) => s.game?.phase === 'gameOver' && !s.busy)
   const t = useT()
+  return (
+    <>
+      <Confetti trigger={celebrate} />
+      <Confetti trigger={over ? 1 : 0} pieces={260} />
+      <CelebrateBanner celebrate={celebrate} label={t('ui.groupComplete')} />
+    </>
+  )
+}
+
+function CelebrateBanner({ celebrate, label }: { celebrate: number; label: string }) {
   if (!celebrate || Date.now() - celebrate > 2500) return null
   return (
-    <div key={celebrate} className="toast-in pointer-events-none fixed inset-x-0 top-1/3 z-[55] text-center" aria-live="polite">
-      <span className="rounded-2xl bg-sol px-5 py-3 font-display text-2xl font-bold shadow-xl">🎉 {t('ui.groupComplete')}</span>
+    <div key={celebrate} className="banner-life pointer-events-none fixed inset-x-0 top-1/3 z-[55] text-center" aria-live="polite">
+      <span className="rounded-2xl bg-sol px-5 py-3 font-display text-2xl font-bold shadow-xl">🎉 {label}</span>
     </div>
   )
 }
@@ -109,7 +122,8 @@ export default function App() {
     <>
       {game ? <GameScreen /> : <Setup />}
       <Toast />
-      <Celebrate />
+      {game && <Celebrate />}
+      {game && <MoneyLayer />}
     </>
   )
 }

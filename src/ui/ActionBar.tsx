@@ -27,6 +27,7 @@ export function ActionBar() {
   const game = useGame((s) => s.game)!
   const dispatch = useGame((s) => s.dispatch)
   const setModal = useGame((s) => s.setModal)
+  const busy = useGame((s) => s.busy)
   const t = useT()
   const actor = actorId(game)
   const p = game.players[game.current]
@@ -71,7 +72,8 @@ export function ActionBar() {
     )
   }
 
-  // Hay una ventana abierta esperando una decisión
+  // Mientras se anima no adelantamos nada; después, hay una ventana esperando una decisión
+  if (busy) return <div className="min-h-14" />
   return (
     <div className="flex min-h-14 items-center justify-center gap-2 text-base">
       {actorPlayer && <Who id={actorPlayer.id} />} <span>{t('ui.decidePopup')}</span>

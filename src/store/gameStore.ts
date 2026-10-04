@@ -25,11 +25,24 @@ export type LandEvent = Extract<GameEvent, { type: 'land' }>
 /** Resultados que merecen ventana: para humanos casi todo, para bots solo lo que cuesta dinero o cárcel */
 const HUMAN_LANDING = new Set(['own', 'mortgaged', 'rent', 'tax', 'goToJail', 'parking', 'visit'])
 const BOT_LANDING = new Set(['rent', 'tax', 'goToJail'])
-const BOT_LANDING_MS = 1700
+const BOT_LANDING_MS = 2600
 
-const STEP_MS = 140
-const BOT_DELAY_MS = 650
-const BOT_CARD_MS = 1800
+// Ritmo de la partida (ms). Más lento para poder seguir la ficha.
+const STEP_MS = 270 // cada casilla del recorrido
+const DICE_MS = 1000 // dados rodando
+const LAND_PAUSE_MS = 900 // la ficha se posa y la casilla brilla antes de abrir la ventana
+const JUMP_MS = 700 // saltos directos (ir a la Ronda)
+const MONEY_STAGGER_MS = 260 // entre animaciones de dinero seguidas
+const MONEY_FX_MS = 1700 // vida de las monedas en pantalla
+const BOT_DELAY_MS = 1000
+const BOT_CARD_MS = 2800
+
+export interface MoneyFx {
+  id: number
+  fromId: string | null
+  toId: string | null
+  amount: number
+}
 
 interface Store {
   lang: Lang
@@ -50,6 +63,14 @@ interface Store {
   toast: { text: string; id: number } | null
   /** Destacar brevemente un grupo completado */
   celebrate: number
+  /** Dados rodando */
+  rolling: boolean
+  /** Casilla donde acaba de posarse una ficha (brilla) */
+  landingAt: { tile: number; playerId: string } | null
+  /** Monedas volando entre jugadores */
+  moneyFx: MoneyFx[]
+  /** Dinero mostrado: se actualiza cuando llegan las monedas, no antes */
+  displayMoney: Record<string, number>
 
   newGame: (players: PlayerSetup[], quick: QuickSetup) => void
   continueGame: () => void
@@ -67,6 +88,9 @@ interface Store {
 let stepTimer: ReturnType<typeof setTimeout> | null = null
 let botTimer: ReturnType<typeof setTimeout> | null = null
 let toastTimer: ReturnType<typeof setTimeout> | null = null
+let fxSeq = 0
+
+const moneyOf = (g: GameState) => Object.fromEntries(g.players.map((p) => [p.id, p.money]))
 
 const prefs = loadPrefs()
 
@@ -79,24 +103,29 @@ export const useGame = create<Store>((set, get) => {
     if (get().shownCard || get().shownLanding) return // esperando a que se cierre la ventana
     const e = queue[0]
     if (!e) {
-      set({ busy: false })
+      // Fin de la cola: el dinero mostrado coincide con el real
+      set({ busy: false, landingAt: null, displayMoney: moneyOf(game) })
       scheduleBot()
       return
     }
     set({ busy: true })
+    const next = (ms: number) => {
+      stepTimer = setTimeout(() => { stepTimer = null; pump() }, ms)
+    }
     const idx = e.type === 'move' ? game.players.findIndex((p) => p.id === e.playerId) : -1
     switch (e.type) {
       case 'move': {
         const pos = [...get().displayPos]
+        if (get().landingAt) set({ landingAt: null })
         if (e.direct || pos[idx] === e.to) {
           pos[idx] = e.to
           set({ displayPos: pos, queue: queue.slice(1) })
-          stepTimer = setTimeout(() => { stepTimer = null; pump() }, e.direct ? 350 : 0)
+          next(e.direct ? JUMP_MS : 0)
           return
         }
         pos[idx] = e.backwards ? (pos[idx] + 39) % 40 : (pos[idx] + 1) % 40
         set({ displayPos: pos })
-        stepTimer = setTimeout(() => { stepTimer = null; pump() }, STEP_MS)
+        next(STEP_MS)
         return
       }
       case 'card': {
@@ -107,23 +136,48 @@ export const useGame = create<Store>((set, get) => {
         return
       }
       case 'land': {
-        const bot = getPlayer(game, e.playerId).isBot
-        if ((bot ? BOT_LANDING : HUMAN_LANDING).has(e.outcome)) {
-          set({ queue: queue.slice(1), shownLanding: e })
-          if (bot) stepTimer = setTimeout(() => { stepTimer = null; get().dismissLanding() }, BOT_LANDING_MS)
+        // La ficha se posa, la casilla brilla y después se abre la ventana
+        set({ queue: queue.slice(1), landingAt: { tile: e.tile, playerId: e.playerId } })
+        stepTimer = setTimeout(() => {
+          stepTimer = null
+          const g = get().game
+          if (!g) return
+          const bot = getPlayer(g, e.playerId).isBot
+          if ((bot ? BOT_LANDING : HUMAN_LANDING).has(e.outcome)) {
+            set({ shownLanding: e })
+            if (bot) stepTimer = setTimeout(() => { stepTimer = null; get().dismissLanding() }, BOT_LANDING_MS)
+            return
+          }
+          pump()
+        }, e.outcome === 'go' ? 400 : LAND_PAUSE_MS)
+        return
+      }
+      case 'money': {
+        if (e.amount <= 0) {
+          set({ queue: queue.slice(1) })
+          pump()
           return
         }
-        set({ queue: queue.slice(1) })
-        pump()
+        const fx: MoneyFx = { id: ++fxSeq, fromId: e.fromId, toId: e.toId, amount: e.amount }
+        const dm = { ...get().displayMoney }
+        if (e.fromId && dm[e.fromId] !== undefined) dm[e.fromId] -= e.amount
+        if (e.toId && dm[e.toId] !== undefined) dm[e.toId] += e.amount
+        set({ queue: queue.slice(1), moneyFx: [...get().moneyFx, fx], displayMoney: dm })
+        setTimeout(() => set({ moneyFx: get().moneyFx.filter((x) => x.id !== fx.id) }), MONEY_FX_MS)
+        next(MONEY_STAGGER_MS)
         return
       }
       case 'groupComplete':
         set({ queue: queue.slice(1), celebrate: Date.now() })
-        pump()
+        next(400)
         return
       case 'dice':
-        set({ queue: queue.slice(1) })
-        stepTimer = setTimeout(() => { stepTimer = null; pump() }, 450)
+        set({ queue: queue.slice(1), rolling: true, landingAt: null })
+        stepTimer = setTimeout(() => {
+          stepTimer = null
+          set({ rolling: false })
+          next(250)
+        }, DICE_MS)
         return
       default:
         set({ queue: queue.slice(1) })
@@ -154,6 +208,10 @@ export const useGame = create<Store>((set, get) => {
       game,
       savedGame: null,
       displayPos: game.players.map((p) => p.position),
+      displayMoney: moneyOf(game),
+      moneyFx: [],
+      rolling: false,
+      landingAt: null,
       queue: [],
       busy: false,
       shownCard: null,
@@ -175,6 +233,10 @@ export const useGame = create<Store>((set, get) => {
     shownCard: null,
     shownLanding: null,
     modal: { type: 'none' },
+    rolling: false,
+    landingAt: null,
+    moneyFx: [],
+    displayMoney: {},
     zoom: false,
     toast: null,
     celebrate: 0,

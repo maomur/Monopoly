@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { BOARD, GROUP_COLORS } from '../engine/board'
 import { isOwnable } from '../engine/types'
 import { useGame } from '../store/gameStore'
@@ -24,9 +25,24 @@ export function Die({ value }: { value: number }) {
   )
 }
 
+/** Caras aleatorias mientras los dados ruedan */
+function useTumble(rolling: boolean): [number, number] {
+  const [faces, setFaces] = useState<[number, number]>([1, 1])
+  useEffect(() => {
+    if (!rolling) return
+    const id = setInterval(() => {
+      setFaces([1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)])
+    }, 85)
+    return () => clearInterval(id)
+  }, [rolling])
+  return faces
+}
+
 export function CenterPanel() {
   const game = useGame((s) => s.game)!
   const busy = useGame((s) => s.busy)
+  const rolling = useGame((s) => s.rolling)
+  const tumble = useTumble(rolling)
   const lang = useGame((s) => s.lang)
   const t = useT()
   const p = game.players[game.current]
@@ -47,8 +63,8 @@ export function CenterPanel() {
       <div className="flex h-[22%] items-center gap-[0.6em]">
         {game.dice ? (
           <>
-            <div className="aspect-square h-full"><Die value={game.dice[0]} /></div>
-            <div className="aspect-square h-full"><Die value={game.dice[1]} /></div>
+            <div className={`aspect-square h-full ${rolling ? 'dice-roll' : 'dice-settle'}`}><Die value={rolling ? tumble[0] : game.dice[0]} /></div>
+            <div className={`aspect-square h-full ${rolling ? 'dice-roll dice-roll-b' : 'dice-settle'}`}><Die value={rolling ? tumble[1] : game.dice[1]} /></div>
           </>
         ) : (
           <span className="font-display text-[1.6em] font-bold text-mar">BCN Tycoon</span>

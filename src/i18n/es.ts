@@ -336,6 +336,11 @@ export const es = {
   'tileCard.card': 'Carta',
   'tileCard.corner': 'Esquina',
   'ui.decidePopup': 'tiene que decidir en la ventana',
+  'payment.rent': 'Alquiler',
+  'payment.tax': 'Impuesto',
+  'payment.bank': 'Banca',
+  'payment.utility': 'Dados {d} × {m}',
+  'payment.pay': 'Pagar y seguir',
 } as const
 
 export type I18nKey = keyof typeof es

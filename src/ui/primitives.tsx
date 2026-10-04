@@ -143,13 +143,38 @@ export function Popup({
   onClose,
   labelledBy,
   wide = false,
+  originTile,
 }: {
   children: ReactNode
   onClose?: () => void
   labelledBy?: string
   wide?: boolean
+  /** Casilla del tablero desde la que "sale volando" la tarjeta */
+  originTile?: number
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  // La tarjeta sale de la casilla, vuela girando hasta el centro y rebota
+  useEffect(() => {
+    const el = ref.current
+    if (!el || originTile === undefined) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const tile = document.querySelector(`[data-tile="${originTile}"]`)
+    if (!tile) return
+    const a = tile.getBoundingClientRect()
+    const b = el.getBoundingClientRect()
+    const dx = a.left + a.width / 2 - (b.left + b.width / 2)
+    const dy = a.top + a.height / 2 - (b.top + b.height / 2)
+    const sc = Math.max(0.08, Math.min(a.width / b.width, 0.3))
+    el.animate(
+      [
+        { transform: `translate(${dx}px, ${dy}px) scale(${sc}) rotateX(65deg) rotateZ(-14deg)`, opacity: 0.35, filter: 'brightness(1.8)' },
+        { transform: 'translate(0, -16px) scale(1.06) rotateX(-10deg) rotateZ(2deg)', opacity: 1, filter: 'brightness(1.15)', offset: 0.58 },
+        { transform: 'translate(0, 5px) scale(0.985) rotateX(4deg) rotateZ(-0.5deg)', filter: 'brightness(1)', offset: 0.8 },
+        { transform: 'none', opacity: 1 },
+      ],
+      { duration: 720, easing: 'cubic-bezier(.2,.85,.25,1)' },
+    )
+  }, [originTile])
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null
     ref.current?.focus()
@@ -164,10 +189,10 @@ export function Popup({
   }, [onClose])
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto overscroll-contain" role="presentation">
-      <div className="fixed inset-0 bg-ink/55" onClick={() => onClose?.()} aria-hidden="true" />
+      <div className="backdrop-in fixed inset-0 bg-ink/55" onClick={() => onClose?.()} aria-hidden="true" />
       {/* min-h-full + centrado: si la tarjeta es más alta que la pantalla, se desplaza sin cortarse */}
       <div
-        className="relative flex min-h-full items-center justify-center p-3 py-[max(0.75rem,env(safe-area-inset-top))] land:py-2"
+        className="relative flex min-h-full items-center justify-center p-3 py-[max(0.75rem,env(safe-area-inset-top))] [perspective:1200px] land:py-2"
         onClick={(e) => { if (e.target === e.currentTarget) onClose?.() }}
       >
         <div
@@ -176,7 +201,7 @@ export function Popup({
           aria-modal="true"
           aria-labelledby={labelledBy}
           tabIndex={-1}
-          className={`pop-in relative w-full ${wide ? 'max-w-md' : 'max-w-sm'} outline-none land:max-w-2xl`}
+          className={`${originTile === undefined ? 'pop-in' : ''} pop-shine relative w-full ${wide ? 'max-w-md' : 'max-w-sm'} outline-none land:max-w-2xl`}
         >
           {children}
         </div>

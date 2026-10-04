@@ -3,7 +3,7 @@ import { GROUP_COLORS, GROUP_ORDER, GROUPS, HOTEL, TRANSPORT_INDICES, UTILITY_IN
 import { netWorth } from '../engine/queries'
 import { useGame } from '../store/gameStore'
 import { formatMoney, logText, tileName } from './format'
-import { Money } from './primitives'
+import { AnimatedMoney } from './MoneyFx'
 import { TokenIcon } from './Token'
 import { useT } from './useT'
 
@@ -58,6 +58,7 @@ function PropertyChips({ playerId }: { playerId: string }) {
 
 function PlayersList() {
   const game = useGame((s) => s.game)!
+  const displayMoney = useGame((s) => s.displayMoney)
   const t = useT()
   return (
     <ul className="space-y-2">
@@ -88,7 +89,7 @@ function PlayersList() {
                       ].filter(Boolean).join(' · ')}
                 </span>
               </span>
-              <Money amount={p.money} className="font-display text-lg font-bold" />
+              <AnimatedMoney value={displayMoney[p.id] ?? p.money} className="font-display text-lg font-bold" />
             </div>
             {!p.bankrupt && <div className="mt-1.5"><PropertyChips playerId={p.id} /></div>}
           </li>

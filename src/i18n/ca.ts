@@ -338,4 +338,9 @@ export const ca: Dict = {
   'tileCard.card': 'Carta',
   'tileCard.corner': 'Cantonada',
   'ui.decidePopup': 'ha de decidir a la finestra',
+  'payment.rent': 'Lloguer',
+  'payment.tax': 'Impost',
+  'payment.bank': 'Banca',
+  'payment.utility': 'Daus {d} × {m}',
+  'payment.pay': 'Pagar i continuar',
 }
