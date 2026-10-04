@@ -114,7 +114,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
     if (url.pathname === '/') {
-      return new Response('<!doctype html><meta charset="utf-8"><title>BCN Tycoon online</title><p>BCN Tycoon online: OK</p>', {
+      return new Response('<!doctype html><meta charset="utf-8"><title>BCN Tycoon online</title><p>BCN Tycoon online: OK ✅ v2</p>', {
         headers: { 'content-type': 'text/html; charset=utf-8' },
       })
     }
