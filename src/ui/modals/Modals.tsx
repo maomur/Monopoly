@@ -7,6 +7,7 @@ import { TileCard } from '../TileCard'
 import { TokenIcon } from '../Token'
 import { sfx } from '../../audio/sfx'
 import { LangToggle, SoundToggle } from '../Header'
+import { useInstall } from '../install'
 import { useT } from '../useT'
 
 export function TileModal({ index }: { index: number }) {
@@ -140,6 +141,16 @@ const SOUND_PREVIEW: [string, () => void][] = [
   ['sound.deny', sfx.deny],
 ]
 
+export function InstallApp() {
+  const [mode, install] = useInstall()
+  const t = useT()
+  if (!mode) return null
+  if (mode === 'prompt') {
+    return <ActionButton variant="primary" onClick={install}>📲 {t('install.button')}</ActionButton>
+  }
+  return <p className="rounded-xl bg-white px-3 py-2 text-sm">📲 {t('install.ios')}</p>
+}
+
 export function MenuModal() {
   const setModal = useGame((s) => s.setModal)
   const quit = useGame((s) => s.quitGame)
@@ -156,6 +167,7 @@ export function MenuModal() {
           <span>{t('ui.sound')}</span>
           <SoundToggle />
         </div>
+        <InstallApp />
         <details className="rounded-xl bg-white px-3 py-2">
           <summary className="cursor-pointer py-1 font-semibold">{t('sound.preview')}</summary>
           <div className="grid grid-cols-2 gap-2 py-2">

@@ -368,4 +368,6 @@ export const ca: Dict = {
   'sound.bankrupt': 'Fallida',
   'sound.victory': 'Victòria',
   'sound.deny': 'No disponible',
+  'install.button': 'Instal·lar com a app',
+  'install.ios': 'Per instal·lar-la com a app: prem Compartir i després «Afegeix a la pantalla d’inici».',
 }

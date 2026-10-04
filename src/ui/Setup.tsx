@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { PLAYER_COLORS, TOKENS, type PlayerSetup, type TokenId } from '../engine/state'
 import { useGame, type QuickSetup } from '../store/gameStore'
 import { LangToggle, SoundToggle } from './Header'
+import { InstallApp } from './modals/Modals'
 import { ActionButton } from './primitives'
 import { TOKEN_LABEL_KEY, TokenIcon } from './Token'
 import { useT } from './useT'
@@ -144,6 +145,7 @@ export function Setup() {
 
       <h2 className="mt-6 font-display text-xl font-semibold">{t('ui.sound')}</h2>
       <div className="mt-2"><SoundToggle /></div>
+      <div className="mt-4 grid"><InstallApp /></div>
 
       <ActionButton
         big

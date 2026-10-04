@@ -366,6 +366,8 @@ export const es = {
   'sound.bankrupt': 'Bancarrota',
   'sound.victory': 'Victoria',
   'sound.deny': 'No disponible',
+  'install.button': 'Instalar como app',
+  'install.ios': 'Para instalarla como app: pulsa Compartir y después «Añadir a pantalla de inicio».',
 } as const
 
 export type I18nKey = keyof typeof es
