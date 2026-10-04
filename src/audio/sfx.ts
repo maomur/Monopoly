@@ -63,7 +63,22 @@ function audio(): AudioContext | null {
 // Los navegadores solo dejan sonar audio tras un gesto del usuario.
 // iOS es estricto: hay que reanudar el contexto y reproducir algo (aunque sea silencio)
 // dentro del propio gesto, y vuelve a "interrumpirlo" al pasar a segundo plano.
+// iOS a veces deja el contexto "muerto" tras volver de segundo plano, una llamada
+// o mucho tiempo inactivo: dice estar activo pero no suena. La solución fiable es
+// tirarlo y crear uno nuevo en el siguiente toque.
+let stale = false
+
+function reset() {
+  const old = ctx
+  ctx = null
+  dry = null
+  wet = null
+  stale = false
+  if (old) void old.close().catch(() => {})
+}
+
 function unlock() {
+  if (ctx && (stale || ctx.state === 'closed' || (ctx.state as string) === 'interrupted')) reset()
   const c = audio()
   if (!c) return
   // iOS 17+: que el audio del juego suene aunque el interruptor de silencio esté activado
@@ -89,8 +104,9 @@ if (typeof window !== 'undefined') {
     window.addEventListener(ev, unlock, { capture: true, passive: true })
   }
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && ctx && ctx.state !== 'running') void ctx.resume()
+    if (document.visibilityState === 'hidden') stale = true
   })
+  window.addEventListener('pagehide', () => { stale = true })
 }
 
 function ready(): AudioContext | null {
