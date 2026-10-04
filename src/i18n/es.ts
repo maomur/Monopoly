@@ -326,6 +326,7 @@ export const es = {
   'trade.kicker': 'Propuesta de intercambio',
   'trade.titleFor': 'Para {name}',
   'trade.passPhone': 'Pásale el móvil a {name} para que decida.',
+  'trade.yours': 'Lo que tienes tú',
   'trade.offers': 'te ofrece:',
   'jail.title': 'Atascado en la Ronda',
   'jail.options': 'Puedes pagar {amount} €, usar una carta o intentar sacar dobles.',

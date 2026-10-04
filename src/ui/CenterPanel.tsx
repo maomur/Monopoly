@@ -111,7 +111,7 @@ function Die3D({ value, seq, index }: { value: number; seq: number; index: numbe
   )
 }
 
-function Dice() {
+export function Dice() {
   const dice = useGame((s) => s.game?.dice) ?? null
   const seq = useGame((s) => s.rollSeq)
   const [a, b] = dice ?? [5, 2]

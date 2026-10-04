@@ -328,6 +328,7 @@ export const ca: Dict = {
   'trade.kicker': 'Proposta d’intercanvi',
   'trade.titleFor': 'Per a {name}',
   'trade.passPhone': 'Passa-li el mòbil a {name} perquè decideixi.',
+  'trade.yours': 'El que tens tu',
   'trade.offers': 't’ofereix:',
   'jail.title': 'Encallat a la Ronda',
   'jail.options': 'Pots pagar {amount} €, fer servir una carta o intentar treure dobles.',

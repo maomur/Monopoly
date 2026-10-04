@@ -121,6 +121,61 @@ function Picker({
   )
 }
 
+/** Todo lo que tiene un jugador, marcando lo que entra en el trato (solo lectura) */
+export function HoldingsView({
+  game,
+  ownerId,
+  side,
+  title,
+  tone,
+}: {
+  game: GameState
+  ownerId: string
+  side: TradeSide
+  title: string
+  tone: 'give' | 'get'
+}) {
+  const lang = useGame((s) => s.lang)
+  const t = useT()
+  const owner = getPlayer(game, ownerId)
+  const tiles = tilesOwnedBy(game, ownerId)
+  const mark = tone === 'give' ? 'bg-terracota/15 ring-1 ring-terracota font-semibold' : 'bg-olivo/15 ring-1 ring-olivo font-semibold'
+  const badge = tone === 'give' ? 'text-terracota' : 'text-olivo'
+  const arrow = tone === 'give' ? '→' : '←'
+  return (
+    <section className="rounded-xl border-2 border-ink/10 bg-white p-2 text-sm">
+      <h3 className="flex items-center gap-1.5 font-display font-semibold">
+        <span className="inline-block h-3 w-3 rounded-full" style={{ background: owner.color }} />
+        {title}
+      </h3>
+      <div className={`mt-1 flex items-center justify-between rounded-md px-1.5 py-1 ${side.money ? mark : ''}`}>
+        <span>{t('trade.money')}: <Money amount={owner.money} /></span>
+        {side.money > 0 && <span className={badge}>{arrow} <Money amount={side.money} /></span>}
+      </div>
+      {owner.jailFreeCards.length > 0 && (
+        <div className={`flex items-center justify-between rounded-md px-1.5 py-1 ${side.jailCards ? mark : ''}`}>
+          <span>{t('trade.jailCards', { n: owner.jailFreeCards.length })}</span>
+          {side.jailCards > 0 && <span className={badge}>{arrow}</span>}
+        </div>
+      )}
+      {tiles.length === 0 && <p className="px-1.5 py-1 opacity-60">{t('trade.noTiles')}</p>}
+      <ul>
+        {tiles.map((i) => {
+          const inDeal = side.tiles.includes(i)
+          return (
+            <li key={i} className={`flex min-h-8 items-center gap-2 rounded-md px-1.5 ${inDeal ? mark : ''}`}>
+              <Swatch tile={i} />
+              <span className="flex-1">{tileName(lang, i)}</span>
+              {game.ownership[i].mortgaged && <span className="text-xs opacity-70">{t('manage.mortgaged')}</span>}
+              {inDeal && <span className={badge}>{arrow}</span>}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
 const emptySide = (): TradeSide => ({ money: 0, tiles: [], jailCards: 0 })
 
 export function TradeModal() {

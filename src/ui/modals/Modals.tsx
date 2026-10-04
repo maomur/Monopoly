@@ -17,7 +17,7 @@ export function TileModal({ index }: { index: number }) {
   return (
     <Popup onClose={close} labelledBy="tile-title" originTile={index}>
       <TileCard index={index} titleId="tile-title">
-        <ActionButton className="w-full" onClick={close}>{t('ui.close')}</ActionButton>
+        <ActionButton ignoreBusy className="w-full" onClick={close}>{t('ui.close')}</ActionButton>
       </TileCard>
     </Popup>
   )
@@ -71,7 +71,7 @@ export function ConfirmBankruptModal() {
       onClose={close}
       footer={
         <div className="flex gap-2">
-          <ActionButton className="flex-1" onClick={close}>{t('ui.cancel')}</ActionButton>
+          <ActionButton ignoreBusy className="flex-1" onClick={close}>{t('ui.cancel')}</ActionButton>
           <ActionButton variant="danger" className="flex-1" onClick={() => { close(); dispatch({ type: 'bankrupt' }) }}>
             {t('bankrupt.confirm')}
           </ActionButton>
@@ -195,8 +195,8 @@ export function MenuModal() {
             ))}
           </div>
         </details>
-        <ActionButton onClick={() => setModal({ type: 'help' })}>{t('ui.help')}</ActionButton>
-        <ActionButton onClick={quit}>{t('menu.exit')}</ActionButton>
+        <ActionButton ignoreBusy onClick={() => setModal({ type: 'help' })}>{t('ui.help')}</ActionButton>
+        <ActionButton ignoreBusy onClick={quit}>{t('menu.exit')}</ActionButton>
         <p className="text-sm opacity-70">{t('menu.saved')}</p>
       </div>
     </Sheet>

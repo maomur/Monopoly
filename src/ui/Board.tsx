@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { BOARD, GROUP_COLORS, HOTEL } from '../engine/board'
 import type { GameState } from '../engine/state'
 import { useGame } from '../store/gameStore'
-import { CenterPanel } from './CenterPanel'
+import { CenterPanel, Dice } from './CenterPanel'
 import { tileName, tileShort } from './format'
 import { TileGlyph, glyphFor } from './TileGlyph'
 import { TokenIcon } from './Token'
@@ -178,6 +178,7 @@ export function Board() {
   })
 
   return (
+    <div className={`relative ${wide ? 'h-full w-full' : ''}`} style={{ ['--bw' as string]: `${bw || 375}px` }}>
     <div
       ref={scroller}
       className={`board-scroller relative mx-auto ${wide ? 'h-full w-full' : 'aspect-square w-full'} ${zoom ? 'overflow-auto' : 'overflow-hidden'}`}
@@ -240,6 +241,13 @@ export function Board() {
           }),
         )}
       </div>
+    </div>
+    {/* Con zoom el centro del tablero queda fuera de la vista: dados flotantes siempre visibles */}
+    {zoom && (
+      <div className="pointer-events-none absolute bottom-2 right-2 z-20 rounded-2xl bg-arena/85 px-3 py-2 shadow-lg ring-1 ring-ink/10 backdrop-blur [--bw:300px]">
+        <Dice />
+      </div>
+    )}
     </div>
   )
 }

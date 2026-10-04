@@ -9,7 +9,7 @@ import {
 } from '../../engine/validate'
 import { useGame, type LandEvent } from '../../store/gameStore'
 import { tileName } from '../format'
-import { TradeSummary } from '../modals/TradeModal'
+import { TradeSummary, HoldingsView } from '../modals/TradeModal'
 import { ActionButton, Money, Popup } from '../primitives'
 import { TileCard, tileColors } from '../TileCard'
 import { TokenIcon } from '../Token'
@@ -380,6 +380,7 @@ function DebtPopup() {
 
 function TradePopup() {
   const game = useGame((s) => s.game)!
+  const online = useGame((s) => !!s.online)
   const dispatch = useGame((s) => s.dispatch)
   const t = useT()
   const tr = game.trade!
@@ -401,11 +402,15 @@ function TradePopup() {
           </div>
         }
       >
-        <p className="text-center text-sm">
-          {t('trade.passPhone', { name: getPlayer(game, tr.toId).name })}
-        </p>
+        {!online && !getPlayer(game, tr.fromId).isBot && (
+          <p className="text-center text-sm">{t('trade.passPhone', { name: getPlayer(game, tr.toId).name })}</p>
+        )}
         <p className="text-center"><Who id={tr.fromId} /> {t('trade.offers')}</p>
-        <TradeSummary offer={tr} viewerId={tr.toId} />
+        <div className="land:hidden"><TradeSummary offer={tr} viewerId={tr.toId} /></div>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2 land:grid-cols-2">
+          <HoldingsView game={game} ownerId={tr.toId} side={tr.get} tone="give" title={t('trade.yours')} />
+          <HoldingsView game={game} ownerId={tr.fromId} side={tr.give} tone="get" title={getPlayer(game, tr.fromId).name} />
+        </div>
       </PopupCard>
     </Popup>
   )

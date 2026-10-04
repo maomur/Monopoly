@@ -30,7 +30,7 @@ export function ManageModal() {
       footer={
         <div className="flex items-center justify-between">
           <span>{t('ui.cash')}: <Money amount={p.money} className="font-bold" /></span>
-          <ActionButton variant="primary" onClick={close}>{t('ui.done')}</ActionButton>
+          <ActionButton ignoreBusy variant="primary" onClick={close}>{t('ui.done')}</ActionButton>
         </div>
       }
     >

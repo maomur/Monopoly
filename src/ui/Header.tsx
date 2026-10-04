@@ -80,10 +80,10 @@ export function Header({ className = '', compact = false }: { className?: string
   const toggleMute = useGame((s) => s.toggleMute)
   const t = useT()
   const qm = game.quickMode
-  const iconBtn = 'grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white font-bold text-mar-deep border-2 border-mar/30 aria-pressed:bg-cel/30'
+  const iconBtn = 'grid h-10 w-10 max-[359px]:h-9 max-[359px]:w-9 shrink-0 place-items-center rounded-lg bg-white font-bold text-mar-deep border-2 border-mar/30 aria-pressed:bg-cel/30'
   return (
     <header className={`${compact ? 'sticky top-0 z-10 flex-wrap px-2 py-1.5' : 'sticky top-[env(safe-area-inset-top,0px)] z-30 px-3 py-2'} flex items-center gap-1.5 bg-arena/95 backdrop-blur ${className}`}>
-      <span className="whitespace-nowrap font-display text-base font-bold text-mar sm:text-lg">BCN Tycoon</span>
+      <span className="whitespace-nowrap max-[359px]:hidden font-display text-base font-bold text-mar sm:text-lg">BCN Tycoon</span>
       <span className="whitespace-nowrap text-xs opacity-80 sm:text-sm">
         {qm.type === 'rounds' ? t('ui.roundOf', { n: Math.min(game.round, qm.limit), max: qm.limit }) : t('ui.round', { n: game.round })}
       </span>
