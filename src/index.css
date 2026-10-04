@@ -243,3 +243,19 @@ button { -webkit-tap-highlight-color: transparent; }
 @media (orientation: landscape) and (max-height: 600px) {
   html.in-game, html.in-game body { height: 100%; overflow: hidden; overscroll-behavior: none }
 }
+
+/* ===== Pantalla de bienvenida ===== */
+.splash { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: linear-gradient(180deg, #1572CF, #073B73); color: #fff; font-family: var(--font-display); }
+.splash-logo { width: min(38vw, 38vh, 180px); aspect-ratio: 1; filter: drop-shadow(0 14px 24px rgba(2,28,56,.45)); }
+.splash-title { font-size: clamp(28px, 7vw, 44px); font-weight: 700; letter-spacing: .01em }
+.splash-tag { font-size: clamp(13px, 3.4vw, 17px); color: #FFD866; font-family: var(--font-sans); font-weight: 600 }
+@keyframes splash-pop { 0% { transform: scale(.6) rotate(-8deg); opacity: 0 } 60% { transform: scale(1.06) rotate(1deg); opacity: 1 } 100% { transform: none } }
+@keyframes splash-float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+.splash-pop { animation: splash-pop 650ms cubic-bezier(.2,.9,.3,1.2) both, splash-float 2.4s 650ms ease-in-out infinite }
+@keyframes splash-rise { from { transform: translateY(12px); opacity: 0 } to { transform: none; opacity: 1 } }
+.splash-rise { animation: splash-rise 500ms 250ms ease-out both }
+.splash-rise-2 { animation-delay: 420ms }
+@keyframes splash-out { to { opacity: 0; transform: scale(1.04) } }
+.splash-out { animation: splash-out 450ms ease-in forwards }
+@media (prefers-reduced-motion: reduce) { .splash-pop, .splash-rise, .splash-out { animation: none } .splash-out { opacity: 0 } }

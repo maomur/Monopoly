@@ -13,6 +13,7 @@ import { TradeModal } from './ui/modals/TradeModal'
 import { Panels } from './ui/Panels'
 import { DecisionPopups, LandingPopup } from './ui/popups/GamePopups'
 import { Setup } from './ui/Setup'
+import { Splash } from './ui/Splash'
 import { useT } from './ui/useT'
 import { LANDSCAPE_QUERY } from './ui/useLandscape'
 import { Sheet } from './ui/primitives'
@@ -162,6 +163,7 @@ export default function App() {
       <Toast />
       {game && <Celebrate />}
       {game && <MoneyLayer />}
+      <Splash />
     </>
   )
 }

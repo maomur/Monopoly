@@ -23,7 +23,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'any',
         theme_color: '#0B5CAD',
-        background_color: '#FBF3E4',
+        background_color: '#0E5FB5',
         categories: ['games', 'entertainment'],
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },

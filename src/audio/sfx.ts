@@ -60,20 +60,48 @@ function audio(): AudioContext | null {
   return ctx
 }
 
-// Los navegadores solo dejan sonar audio tras un gesto del usuario
-if (typeof window !== 'undefined') {
-  const unlock = () => {
-    const c = audio()
-    if (c && c.state === 'suspended') void c.resume()
+// Los navegadores solo dejan sonar audio tras un gesto del usuario.
+// iOS es estricto: hay que reanudar el contexto y reproducir algo (aunque sea silencio)
+// dentro del propio gesto, y vuelve a "interrumpirlo" al pasar a segundo plano.
+function unlock() {
+  const c = audio()
+  if (!c) return
+  // iOS 17+: que el audio del juego suene aunque el interruptor de silencio esté activado
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession
+  if (session && session.type !== 'playback') {
+    try {
+      session.type = 'playback'
+    } catch {
+      /* no disponible */
+    }
   }
-  window.addEventListener('pointerdown', unlock, { passive: true })
-  window.addEventListener('keydown', unlock)
+  if (c.state !== 'running') void c.resume()
+  // Un instante de silencio "despierta" la salida de audio en iOS
+  const b = c.createBuffer(1, 1, c.sampleRate)
+  const src = c.createBufferSource()
+  src.buffer = b
+  src.connect(c.destination)
+  src.start(0)
+}
+
+if (typeof window !== 'undefined') {
+  for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) {
+    window.addEventListener(ev, unlock, { capture: true, passive: true })
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && ctx && ctx.state !== 'running') void ctx.resume()
+  })
 }
 
 function ready(): AudioContext | null {
   if (muted) return null
   const c = audio()
-  if (!c || c.state !== 'running' || !dry || !wet) return null
+  if (!c || !dry || !wet) return null
+  if (c.state !== 'running') {
+    // Suspendido o interrumpido (iOS): intentamos reanudar para el próximo sonido
+    void c.resume()
+    return null
+  }
   return c
 }
 
