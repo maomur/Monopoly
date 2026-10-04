@@ -59,6 +59,7 @@ function PropertyChips({ playerId }: { playerId: string }) {
 function PlayersList() {
   const game = useGame((s) => s.game)!
   const displayMoney = useGame((s) => s.displayMoney)
+  const myId = useGame((s) => s.online?.myPlayerId ?? null)
   const t = useT()
   return (
     <ul className="space-y-2">
@@ -77,6 +78,7 @@ function PlayersList() {
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">
                   {p.name} {p.isBot && <span aria-label="bot">🤖</span>}
+                  {myId === p.id && <span className="ml-1 text-xs font-normal opacity-70">({t('online.you')})</span>}
                   {active && <span className="ml-1 rounded bg-sol px-1.5 text-xs">{t('players.turn')}</span>}
                 </span>
                 <span className="block text-xs opacity-70">

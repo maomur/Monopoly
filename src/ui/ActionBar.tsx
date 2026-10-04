@@ -28,6 +28,7 @@ export function ActionBar() {
   const dispatch = useGame((s) => s.dispatch)
   const setModal = useGame((s) => s.setModal)
   const busy = useGame((s) => s.busy)
+  const isLocal = useGame((s) => s.isLocal)
   const t = useT()
   const actor = actorId(game)
   const p = game.players[game.current]
@@ -35,10 +36,12 @@ export function ActionBar() {
 
   if (game.phase === 'gameOver') return null
 
-  if (actorPlayer?.isBot) {
+  // Le toca a alguien que no juega en este móvil (bot u otro jugador online)
+  if (actorPlayer && !isLocal(actorPlayer.id)) {
     return (
       <div className="flex min-h-14 items-center justify-center gap-2 text-base">
-        <Who id={actorPlayer.id} /> <span className="animate-pulse">{t('ui.botThinking')}</span>
+        <Who id={actorPlayer.id} />{' '}
+        <span className="animate-pulse">{actorPlayer.isBot ? t('ui.botThinking') : t('ui.playing')}</span>
       </div>
     )
   }

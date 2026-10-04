@@ -179,6 +179,7 @@ export function LandingPopup() {
   const game = useGame((s) => s.game)!
   const dismiss = useGame((s) => s.dismissLanding)
   const setModal = useGame((s) => s.setModal)
+  const isLocal = useGame((s) => s.isLocal)
   const t = useT()
   const p = getPlayer(game, e.playerId)
 
@@ -190,7 +191,7 @@ export function LandingPopup() {
     visit: t('landing.visit', { name: p.name }),
   }
 
-  const footer = p.isBot ? (
+  const footer = !isLocal(p.id) ? (
     <div className="flex items-center gap-3">
       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">
         <div className="bot-timer h-full rounded-full bg-mar" />
@@ -262,6 +263,7 @@ function BuyPopup() {
 function AuctionPopup() {
   const game = useGame((s) => s.game)!
   const dispatch = useGame((s) => s.dispatch)
+  const isLocal = useGame((s) => s.isLocal)
   const t = useT()
   const a = game.auction!
   const bidder = a.bidders[a.turn]
@@ -293,8 +295,8 @@ function AuctionPopup() {
         <p className="text-center text-sm">
           {t('auction.turn')} <Who id={bidder} /> · <Money amount={p.money} />
         </p>
-        {p.isBot ? (
-          <p className="animate-pulse text-center">{t('ui.botThinking')}</p>
+        {!isLocal(bidder) ? (
+          <p className="animate-pulse text-center">{p.isBot ? t('ui.botThinking') : t('ui.playing')}</p>
         ) : (
           <>
             <div className="grid grid-cols-3 gap-2">
@@ -453,9 +455,10 @@ export function DecisionPopups() {
   const shownCard = useGame((s) => s.shownCard)
   const shownLanding = useGame((s) => s.shownLanding)
   const modal = useGame((s) => s.modal)
+  const isLocal = useGame((s) => s.isLocal)
   if (busy || shownCard || shownLanding || modal.type !== 'none') return null
   const actor = actorId(game)
-  const human = actor ? !getPlayer(game, actor).isBot : false
+  const human = actor ? isLocal(actor) : false
   const p = game.players[game.current]
 
   switch (game.phase) {

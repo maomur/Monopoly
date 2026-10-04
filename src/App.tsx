@@ -14,6 +14,7 @@ import { Panels } from './ui/Panels'
 import { DecisionPopups, LandingPopup } from './ui/popups/GamePopups'
 import { Setup } from './ui/Setup'
 import { Splash } from './ui/Splash'
+import { Lobby } from './ui/Lobby'
 import { useT } from './ui/useT'
 import { LANDSCAPE_QUERY } from './ui/useLandscape'
 import { Sheet } from './ui/primitives'
@@ -133,6 +134,7 @@ function GameScreen() {
 
 export default function App() {
   const game = useGame((s) => s.game)
+  const online = useGame((s) => s.online)
   const lang = useGame((s) => s.lang)
   useEffect(() => {
     document.documentElement.lang = lang
@@ -159,7 +161,7 @@ export default function App() {
   }, [])
   return (
     <>
-      {game ? <GameScreen /> : <Setup />}
+      {game ? <GameScreen /> : online ? <Lobby /> : <Setup />}
       <Toast />
       {game && <Celebrate />}
       {game && <MoneyLayer />}

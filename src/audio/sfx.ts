@@ -367,6 +367,13 @@ export const sfx = {
     ;[0, 2, 3, 5, 7, 8, 10].forEach((s, i) => glass(c, { t: 1.8 + i * 0.07, f: penta(s, 2), dur: 1.6, vol: 0.045 }))
   },
 
+  /** Te toca (partidas online): dos notas de cristal */
+  yourTurn() {
+    const c = ready(); if (!c) return
+    glass(c, { f: penta(2, 2), dur: 0.9, vol: 0.06 })
+    glass(c, { t: 0.12, f: penta(5, 2), dur: 1.1, vol: 0.06 })
+  },
+
   /** Botón no disponible: "bump" grave como una vibración */
   deny() {
     const c = ready(); if (!c) return

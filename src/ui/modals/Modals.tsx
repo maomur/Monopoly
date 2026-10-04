@@ -27,6 +27,7 @@ export function CardModal() {
   const card = useGame((s) => s.shownCard)!
   const game = useGame((s) => s.game)!
   const dismiss = useGame((s) => s.dismissCard)
+  const isLocal = useGame((s) => s.isLocal)
   const t = useT()
   const c = CARD_BY_ID[card.cardId]
   const p = getPlayer(game, card.playerId)
@@ -48,7 +49,7 @@ export function CardModal() {
             onClick={dismiss}
             className="min-h-12 w-full rounded-xl bg-terracota px-4 font-display text-lg font-semibold text-white"
           >
-            {p.isBot ? t('ui.ok') : t('ui.continue')}
+            {isLocal(p.id) ? t('ui.continue') : t('ui.ok')}
           </button>
         </div>
       </div>
@@ -89,12 +90,28 @@ export function ConfirmBankruptModal() {
 export function GameOverModal() {
   const game = useGame((s) => s.game)!
   const quit = useGame((s) => s.quitGame)
+  const online = useGame((s) => s.online)
+  const send = useGame((s) => s.onlineSend)
   const t = useT()
+  const isHost = !!online?.room && online.room.hostSeatId === online.you
   const winner = getPlayer(game, game.winnerId!)
   const ranking = [...game.players].sort((a, b) => netWorth(game, b.id) - netWorth(game, a.id))
   return (
     <Sheet title={t('gameOver.title')} closable={false}
-      footer={<ActionButton big variant="primary" className="w-full" onClick={quit}>{t('gameOver.newGame')}</ActionButton>}
+      footer={
+        online ? (
+          <div className="grid gap-2">
+            {isHost ? (
+              <ActionButton big variant="primary" className="w-full" onClick={() => send({ t: 'rematch' })}>{t('online.rematch')}</ActionButton>
+            ) : (
+              <p className="text-center text-sm">{t('online.waitingRematch')}</p>
+            )}
+            <ActionButton variant="ghost" className="w-full" onClick={quit}>{t('online.leave')}</ActionButton>
+          </div>
+        ) : (
+          <ActionButton big variant="primary" className="w-full" onClick={quit}>{t('gameOver.newGame')}</ActionButton>
+        )
+      }
     >
       <div className="py-2 text-center">
         <div className="mx-auto grid h-20 w-20 place-items-center rounded-full text-white" style={{ background: winner.color }}>

@@ -29,6 +29,29 @@ npx vercel --prod   # despliegue a producción
 
 No necesita variables de entorno ni backend: la partida se guarda en el `localStorage` del navegador.
 
+## Modo online (Cloudflare)
+
+Cada partida online es una "sala" que vive en un Durable Object de Cloudflare
+(`server/index.ts`). El servidor ejecuta el mismo motor de reglas que la app,
+tira los dados, valida que cada jugador solo juegue en su turno y juega por los bots.
+La web sigue en Vercel; solo la parte de tiempo real va en Cloudflare.
+
+**Probar en local** (dos terminales):
+```bash
+npx wrangler dev          # servidor de salas en http://127.0.0.1:8787
+VITE_PARTY_HOST=127.0.0.1:8787 npm run build && npm run preview
+```
+
+**Publicar el servidor** (una vez):
+1. Crea una cuenta gratuita en https://dash.cloudflare.com
+2. *Workers & Pages → Create → Import a repository* → elige este repositorio.
+3. Nombre del proyecto: `bcn-tycoon-online` · Comando de despliegue: `npx wrangler deploy`.
+4. Al terminar te da una dirección tipo `bcn-tycoon-online.TU-SUBDOMINIO.workers.dev`.
+
+**Conectar la web** (una vez): en Vercel → *Settings → Environment Variables* añade
+`VITE_PARTY_HOST` = `bcn-tycoon-online.TU-SUBDOMINIO.workers.dev` y vuelve a desplegar.
+Sin esa variable la app funciona igual, pero sin el modo online.
+
 ## Estructura
 
 ```
@@ -39,7 +62,9 @@ src/engine/   Motor de reglas puro (sin React), testeable
   validate.ts   Qué se puede hacer y por qué no (motivos para los tooltips)
   bot.ts        IA de los bots
 src/i18n/     Todos los textos: es.ts (por defecto) y ca.ts
-src/store/    Zustand: partida, animaciones, bots, guardado
+src/online/   Protocolo y lógica de salas online (compartida con el servidor)
+server/       Servidor de salas (Cloudflare Worker + Durable Object)
+src/store/    Zustand: partida, animaciones, bots, guardado, conexión online
 src/ui/       Componentes de interfaz
 tests/engine/ Tests de movimiento, alquileres, cárcel, construcción, bancarrota, cartas, subasta, intercambios y partidas completas bot contra bot
 ```

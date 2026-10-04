@@ -3,11 +3,67 @@ import { PLAYER_COLORS, TOKENS, type PlayerSetup, type TokenId } from '../engine
 import { useGame, type QuickSetup } from '../store/gameStore'
 import { LangToggle, SoundToggle } from './Header'
 import { InstallApp } from './modals/Modals'
+import { onlineAvailable, roomFromUrl } from '../online/config'
+import { lastRoom } from '../online/identity'
+import { normalizeCode } from '../online/protocol'
 import { ActionButton } from './primitives'
 import { TOKEN_LABEL_KEY, TokenIcon } from './Token'
 import { useT } from './useT'
 
 const DEFAULT_NAMES = ['Ana', 'Marc', 'Laia', 'Pol']
+
+/** Jugar online: crear sala o unirse con un código */
+function OnlineCard({ name, token }: { name: string; token: TokenId }) {
+  const t = useT()
+  const create = useGame((s) => s.onlineCreate)
+  const join = useGame((s) => s.onlineJoin)
+  const fromUrl = roomFromUrl()
+  const [code, setCode] = useState(fromUrl ? normalizeCode(fromUrl) : '')
+  const [myName, setMyName] = useState(name)
+  const previous = lastRoom()
+  return (
+    <section className={`mt-4 rounded-2xl bg-white p-4 shadow-sm ${fromUrl ? 'ring-2 ring-mar' : ''}`}>
+      <h2 className="font-display text-xl font-semibold">🌐 {t('online.title')}</h2>
+      <p className="mt-1 text-sm opacity-75">{t('online.intro')}</p>
+      <label htmlFor="online-name" className="mt-3 block text-sm font-semibold">{t('online.yourName')}</label>
+      <input
+        id="online-name"
+        className="mt-1 h-11 w-full rounded-lg border-2 border-ink/15 px-2"
+        value={myName}
+        maxLength={14}
+        onChange={(e) => setMyName(e.target.value)}
+      />
+      <form
+        className="mt-3 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (code.length >= 4) join(code, myName, token)
+        }}
+      >
+        <label htmlFor="online-code" className="sr-only">{t('online.codeLabel')}</label>
+        <input
+          id="online-code"
+          className="h-12 min-w-0 flex-1 rounded-lg border-2 border-mar/30 px-3 font-display text-xl uppercase tracking-[0.15em]"
+          placeholder={t('online.codePlaceholder')}
+          value={code}
+          autoCapitalize="characters"
+          onChange={(e) => setCode(normalizeCode(e.target.value))}
+        />
+        <button type="submit" className="h-12 rounded-xl bg-mar px-4 font-display font-semibold text-white disabled:opacity-40" disabled={code.length < 4}>
+          {t('online.join')}
+        </button>
+      </form>
+      <ActionButton big variant="primary" className="mt-3 w-full" onClick={() => create(myName, token)}>
+        {t('online.create')}
+      </ActionButton>
+      {previous && !fromUrl && (
+        <ActionButton variant="ghost" className="mt-2 w-full" onClick={() => join(previous, myName, token)}>
+          {t('online.rejoin', { code: previous })}
+        </ActionButton>
+      )}
+    </section>
+  )
+}
 
 export function Setup() {
   const t = useT()
@@ -51,6 +107,10 @@ export function Setup() {
         </div>
         <LangToggle />
       </div>
+
+      {onlineAvailable() && <OnlineCard name={players[0].name} token={players[0].token} />}
+
+      {onlineAvailable() && <h2 className="mt-8 font-display text-xl font-semibold">📱 {t('online.localTitle')}</h2>}
 
       {saved && (
         <div className="mt-4 rounded-xl border-2 border-olivo/40 bg-white p-3">

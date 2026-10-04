@@ -5,9 +5,12 @@ import { actorId, decideBot } from '../engine/bot'
 import { getPlayer } from '../engine/queries'
 import { applyAction } from '../engine/reducer'
 import { randomSeed } from '../engine/rng'
-import { createGame, type GameEvent, type GameState, type PlayerSetup, type QuickMode } from '../engine/state'
-import type { Lang } from '../i18n'
+import { createGame, type GameEvent, type GameState, type PlayerSetup, type QuickMode, type TokenId } from '../engine/state'
+import { translate, type Lang } from '../i18n'
 import { setMuted, sfx } from '../audio/sfx'
+import { OnlineConnection } from '../online/client'
+import { newRoomCode, normalizeCode, type ClientMsg, type PublicRoom, type ServerMsg } from '../online/protocol'
+import { deviceKey, forgetRoom, rememberRoom } from '../online/identity'
 import { loadGame, loadPrefs, saveGame, savePrefs } from './persistence'
 
 export type Modal =
@@ -38,6 +41,17 @@ const MONEY_STAGGER_MS = 260 // entre animaciones de dinero seguidas
 const MONEY_FX_MS = 1700 // vida de las monedas en pantalla
 const BOT_DELAY_MS = 1000
 const BOT_CARD_MS = 2800
+
+export interface OnlineState {
+  code: string
+  status: 'connecting' | 'open' | 'closed'
+  room: PublicRoom | null
+  /** Mi asiento en la sala */
+  you: string | null
+  /** Mi jugador en la partida (p1…p4) */
+  myPlayerId: string | null
+  error: string | null
+}
 
 export interface MoneyFx {
   id: number
@@ -76,6 +90,16 @@ interface Store {
   /** Dinero mostrado: se actualiza cuando llegan las monedas, no antes */
   displayMoney: Record<string, number>
 
+  /** Partida online (null = partida local en este móvil) */
+  online: OnlineState | null
+
+  /** ¿Juega este jugador desde este móvil? (online: solo el mío; local: todos los humanos) */
+  isLocal: (playerId: string) => boolean
+  onlineCreate: (name: string, token: TokenId) => void
+  onlineJoin: (code: string, name: string, token: TokenId) => void
+  onlineSend: (msg: ClientMsg) => void
+  onlineLeave: () => void
+
   newGame: (players: PlayerSetup[], quick: QuickSetup) => void
   continueGame: () => void
   quitGame: () => void
@@ -94,6 +118,7 @@ let stepTimer: ReturnType<typeof setTimeout> | null = null
 let botTimer: ReturnType<typeof setTimeout> | null = null
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 let fxSeq = 0
+let conn: OnlineConnection | null = null
 
 const moneyOf = (g: GameState) => Object.fromEntries(g.players.map((p) => [p.id, p.money]))
 
@@ -139,7 +164,7 @@ export const useGame = create<Store>((set, get) => {
       case 'card': {
         sfx.card()
         set({ queue: queue.slice(1), shownCard: { cardId: e.cardId, playerId: e.playerId } })
-        if (getPlayer(game, e.playerId).isBot) {
+        if (!get().isLocal(e.playerId)) {
           stepTimer = setTimeout(() => { stepTimer = null; get().dismissCard() }, BOT_CARD_MS)
         }
         return
@@ -152,7 +177,7 @@ export const useGame = create<Store>((set, get) => {
           stepTimer = null
           const g = get().game
           if (!g) return
-          const bot = getPlayer(g, e.playerId).isBot
+          const bot = !get().isLocal(e.playerId)
           if ((bot ? BOT_LANDING : HUMAN_LANDING).has(e.outcome)) {
             set({ shownLanding: e })
             if (bot) stepTimer = setTimeout(() => { stepTimer = null; get().dismissLanding() }, BOT_LANDING_MS)
@@ -215,8 +240,9 @@ export const useGame = create<Store>((set, get) => {
   function scheduleBot() {
     if (botTimer) clearTimeout(botTimer)
     botTimer = null
-    const { game, busy, shownCard, shownLanding } = get()
-    if (!game || busy || shownCard || shownLanding || game.phase === 'gameOver') return
+    const { game, busy, shownCard, shownLanding, online } = get()
+    // En online los bots los juega el servidor
+    if (online || !game || busy || shownCard || shownLanding || game.phase === 'gameOver') return
     const id = actorId(game)
     if (!id || !getPlayer(game, id).isBot) return
     botTimer = setTimeout(() => {
@@ -245,8 +271,80 @@ export const useGame = create<Store>((set, get) => {
       shownLanding: null,
       modal: { type: 'none' },
     })
-    saveGame(game)
+    if (!get().online) saveGame(game)
     scheduleBot()
+  }
+
+  /** Aplica un estado que llega del servidor: anima sus eventos como si fuera local */
+  function applyRemote(game: GameState, events: GameEvent[]) {
+    const prev = get().game
+    // Partida nueva, primera vez o reconexión: se coloca todo sin animar
+    if (!prev || events.length === 0 || prev.players.length !== game.players.length) {
+      start(game)
+      return
+    }
+    const wasMine = isMineTurn(prev)
+    set({ game, queue: [...get().queue, ...events] })
+    const m = get().modal
+    if (m.type === 'confirmBankrupt' && game.phase !== 'debt') set({ modal: { type: 'none' } })
+    if (m.type === 'trade' && game.phase === 'trade') set({ modal: { type: 'none' } })
+    // Aviso cuando pasa a ser mi turno
+    if (!wasMine && isMineTurn(game)) {
+      sfx.yourTurn()
+      try {
+        navigator.vibrate?.(60)
+      } catch {
+        /* sin vibración */
+      }
+    }
+    pump()
+  }
+
+  function isMineTurn(g: GameState): boolean {
+    const me = get().online?.myPlayerId
+    return !!me && actorId(g) === me
+  }
+
+  function onServer(msg: ServerMsg) {
+    const o = get().online
+    if (!o) return
+    switch (msg.t) {
+      case 'room': {
+        const myPlayerId = msg.room.seats.find((s) => s.id === msg.you)?.playerId ?? null
+        set({ online: { ...o, room: msg.room, you: msg.you, myPlayerId, error: null } })
+        if (msg.room.phase === 'lobby' && get().game) {
+          // Revancha: volver a la sala
+          set({ game: null, queue: [], busy: false, shownCard: null, shownLanding: null, modal: { type: 'none' } })
+        }
+        return
+      }
+      case 'state':
+        applyRemote(msg.game, msg.events)
+        return
+      case 'error':
+        set({ online: { ...o, error: msg.reason } })
+        if (msg.reason === 'notYourTurn' || msg.reason === 'invalidAction') get().showToast(translate(get().lang, `online.error.${msg.reason}`))
+        return
+    }
+  }
+
+  function connect(code: string, create: boolean, join: { name: string; token: TokenId } | null) {
+    conn?.close()
+    set({ online: { code, status: 'connecting', room: null, you: null, myPlayerId: null, error: null } })
+    rememberRoom(code)
+    conn = new OnlineConnection(code, {
+      onOpen: () => {
+        const o = get().online
+        if (o) set({ online: { ...o, status: 'open' } })
+        conn?.send({ t: 'hello', key: deviceKey(), create })
+        if (join) conn?.send({ t: 'join', name: join.name, token: join.token })
+      },
+      onClose: () => {
+        const o = get().online
+        if (o) set({ online: { ...o, status: 'closed' } })
+      },
+      onMessage: onServer,
+    })
   }
 
   return {
@@ -269,6 +367,31 @@ export const useGame = create<Store>((set, get) => {
     toast: null,
     celebrate: 0,
 
+    online: null,
+
+    isLocal: (playerId) => {
+      const { online, game } = get()
+      if (online) return playerId === online.myPlayerId
+      const p = game?.players.find((x) => x.id === playerId)
+      return !!p && !p.isBot
+    },
+
+    onlineCreate: (name, token) => connect(newRoomCode(), true, { name, token }),
+
+    onlineJoin: (code, name, token) => connect(normalizeCode(code), false, { name, token }),
+
+    onlineSend: (msg) => conn?.send(msg),
+
+    onlineLeave: () => {
+      conn?.send({ t: 'leave' })
+      conn?.close()
+      conn = null
+      forgetRoom()
+      if (stepTimer) clearTimeout(stepTimer)
+      stepTimer = null
+      set({ online: null, game: null, queue: [], busy: false, shownCard: null, shownLanding: null, modal: { type: 'none' } })
+    },
+
     newGame: (players, quick) => {
       start(createGame({ players, quickMode: quick, seed: randomSeed(), now: Date.now() }))
     },
@@ -279,6 +402,10 @@ export const useGame = create<Store>((set, get) => {
     },
 
     quitGame: () => {
+      if (get().online) {
+        get().onlineLeave()
+        return
+      }
       if (stepTimer) clearTimeout(stepTimer)
       if (botTimer) clearTimeout(botTimer)
       stepTimer = null
@@ -290,6 +417,12 @@ export const useGame = create<Store>((set, get) => {
     dispatch: (a) => {
       const g = get().game
       if (!g) return
+      // Online: la jugada la valida y aplica el servidor, que la reenvía a todos
+      if (get().online) {
+        conn?.send({ t: 'action', action: a })
+        if (get().modal.type === 'trade' && a.type === 'proposeTrade') set({ modal: { type: 'none' } })
+        return
+      }
       const next = applyAction(g, a)
       if (next === g) return
       saveGame(next)
