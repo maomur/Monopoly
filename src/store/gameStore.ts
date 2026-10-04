@@ -18,6 +18,7 @@ export type Modal =
   | { type: 'tile'; index: number }
   | { type: 'confirmBankrupt' }
   | { type: 'menu' }
+  | { type: 'panels' }
 
 export type QuickSetup = { type: 'none' } | { type: 'rounds'; limit: number } | { type: 'time'; minutes: number }
 

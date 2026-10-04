@@ -2,6 +2,10 @@
 // Al tirar, cada dado da varias vueltas en el aire y frena hasta quedar con la cara que ha salido.
 import { useEffect, useMemo, useRef } from 'react'
 import { useGame } from '../store/gameStore'
+import { ActionBar } from './ActionBar'
+import { AnimatedMoney } from './MoneyFx'
+import { TokenIcon } from './Token'
+import { useT } from './useT'
 
 const PIPS: Record<number, [number, number][]> = {
   1: [[50, 50]],
@@ -107,14 +111,71 @@ function Die3D({ value, seq, index }: { value: number; seq: number; index: numbe
   )
 }
 
-export function CenterPanel() {
+function Dice() {
   const dice = useGame((s) => s.game?.dice) ?? null
   const seq = useGame((s) => s.rollSeq)
   const [a, b] = dice ?? [5, 2]
   return (
-    <div className="flex h-full items-center justify-center gap-[9%]">
+    <div className="flex items-center justify-center gap-[9%]">
       <Die3D value={a} seq={seq} index={0} />
       <Die3D value={b} seq={seq} index={1} />
+    </div>
+  )
+}
+
+/** En horizontal el centro del tablero hace de panel: jugadores, dados y acciones */
+function LandscapeHud() {
+  const game = useGame((s) => s.game)!
+  const displayMoney = useGame((s) => s.displayMoney)
+  const muted = useGame((s) => s.muted)
+  const toggleMute = useGame((s) => s.toggleMute)
+  const setModal = useGame((s) => s.setModal)
+  const t = useT()
+  const qm = game.quickMode
+  const btn = 'grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/90 text-sm font-bold text-mar-deep ring-1 ring-ink/15'
+  return (
+    <div className="flex h-full flex-col justify-between gap-1 p-[1.2%] text-[12px]">
+      <div className="flex items-start gap-1.5">
+        <ul className="flex min-w-0 flex-1 flex-wrap gap-1">
+          {game.players.map((p, i) => {
+            const active = i === game.current && game.phase !== 'gameOver'
+            return (
+              <li
+                key={p.id}
+                className={`flex items-center gap-1 rounded-full py-0.5 pl-0.5 pr-2 ${active ? 'bg-white shadow ring-2 ring-ink' : 'bg-white/70'} ${p.bankrupt ? 'opacity-40' : ''}`}
+              >
+                <span className="grid h-5 w-5 place-items-center rounded-full text-white" style={{ background: p.color }}>
+                  <TokenIcon token={p.token} className="h-3.5 w-3.5" />
+                </span>
+                <span className="max-w-[5.5em] truncate font-semibold">{p.name}</span>
+                <AnimatedMoney value={displayMoney[p.id] ?? p.money} className="font-display font-bold" />
+              </li>
+            )
+          })}
+        </ul>
+        <span className="whitespace-nowrap pt-1.5 text-[11px] opacity-70">
+          {qm.type === 'rounds' ? t('ui.roundOf', { n: Math.min(game.round, qm.limit), max: qm.limit }) : t('ui.round', { n: game.round })}
+        </span>
+        <button type="button" className={btn} onClick={() => setModal({ type: 'panels' })} aria-label={t('tabs.players')}>👥</button>
+        <button type="button" className={btn} onClick={toggleMute} aria-pressed={!muted} aria-label={muted ? t('ui.unmute') : t('ui.mute')}>
+          {muted ? '🔇' : '🔊'}
+        </button>
+        <button type="button" className={btn} onClick={() => setModal({ type: 'help' })} aria-label={t('ui.help')}>?</button>
+        <button type="button" className={btn} onClick={() => setModal({ type: 'menu' })} aria-label={t('menu.title')}>☰</button>
+      </div>
+      <Dice />
+      <div className="hud-actions mx-auto w-full max-w-md">
+        <ActionBar />
+      </div>
+    </div>
+  )
+}
+
+export function CenterPanel({ wide = false }: { wide?: boolean }) {
+  if (wide) return <LandscapeHud />
+  return (
+    <div className="flex h-full items-center justify-center">
+      <Dice />
     </div>
   )
 }

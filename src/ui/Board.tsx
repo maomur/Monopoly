@@ -6,6 +6,7 @@ import { CenterPanel } from './CenterPanel'
 import { tileName, tileShort } from './format'
 import { TileGlyph, glyphFor } from './TileGlyph'
 import { TokenIcon } from './Token'
+import { useLandscape } from './useLandscape'
 import { isOwnable } from '../engine/types'
 
 // Geometría: 11×11, esquinas 1,5 veces más grandes. Unidades totales por lado: 12.
@@ -116,7 +117,7 @@ export function Board() {
   const scroller = useRef<HTMLDivElement>(null)
   // Ancho del tablero en px, medido una vez por cambio real (sin consultas de contenedor:
   // en Safari provocaban recálculos en bucle al girar el móvil)
-  const [bw, setBw] = useState(0)
+  const [size, setSize] = useState({ w: 0, h: 0 })
   useEffect(() => {
     const el = scroller.current
     if (!el) return
@@ -125,7 +126,8 @@ export function Board() {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
         const w = Math.round(el.clientWidth)
-        setBw((prev) => (Math.abs(prev - w) >= 2 ? w : prev))
+        const h = Math.round(el.clientHeight)
+        setSize((prev) => (Math.abs(prev.w - w) >= 2 || Math.abs(prev.h - h) >= 2 ? { w, h } : prev))
       })
     }
     measure()
@@ -147,6 +149,9 @@ export function Board() {
     mq.addEventListener('change', check)
     return () => mq.removeEventListener('change', check)
   }, [toggleZoom])
+  // En horizontal el tablero es apaisado (casi todo el ancho): la escala la marca el lado corto
+  const wide = useLandscape()
+  const bw = wide ? Math.min(size.w, size.h) : size.w
   const clampPx = (min: number, v: number, max: number) => `${Math.max(min, Math.min(max, v))}px`
   const current = game.players[game.current]
   const focusPos = displayPos[game.current] ?? current.position
@@ -175,12 +180,15 @@ export function Board() {
   return (
     <div
       ref={scroller}
-      className={`board-scroller relative mx-auto aspect-square w-full ${zoom ? 'overflow-auto' : 'overflow-hidden'}`}
+      className={`board-scroller relative mx-auto ${wide ? 'h-full w-full' : 'aspect-square w-full'} ${zoom ? 'overflow-auto' : 'overflow-hidden'}`}
       style={{ ['--bw' as string]: `${bw || 375}px` }}
     >
       <div
-        className="relative aspect-square"
-        style={{ width: zoom ? '210%' : '100%', fontSize: zoom ? clampPx(9, bw * 0.034, 14) : clampPx(6, bw * 0.017, 13) }}
+        className={`relative ${wide ? 'h-full' : 'aspect-square'}`}
+        style={{
+          width: zoom ? '210%' : '100%',
+          fontSize: wide ? clampPx(6, bw * 0.023, 12) : zoom ? clampPx(9, bw * 0.034, 14) : clampPx(6, bw * 0.017, 13),
+        }}
       >
         <div
           className="board-grid absolute inset-0 grid"
@@ -193,7 +201,7 @@ export function Board() {
             <Cell key={t.index} game={game} index={t.index} current={t.index === focusPos} landing={landingAt?.tile === t.index} />
           ))}
           <div className="plaza relative overflow-hidden" style={{ gridRow: '2 / 11', gridColumn: '2 / 11' }}>
-            <CenterPanel />
+            <CenterPanel wide={wide} />
           </div>
         </div>
 
@@ -214,7 +222,7 @@ export function Board() {
                   width: 'var(--tok)',
                   height: 'var(--tok)',
                   color: '#fff',
-                  ['--tok' as string]: zoom ? '6%' : '6.2%',
+                  ['--tok' as string]: zoom ? '6%' : `${(bw || 375) * 0.062}px`,
                 }}
               >
                 {/* key = casilla: al cambiar de casilla la animación de salto se repite */}

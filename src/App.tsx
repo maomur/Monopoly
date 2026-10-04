@@ -14,6 +14,7 @@ import { Panels } from './ui/Panels'
 import { DecisionPopups, LandingPopup } from './ui/popups/GamePopups'
 import { Setup } from './ui/Setup'
 import { useT } from './ui/useT'
+import { Sheet } from './ui/primitives'
 
 function Toast() {
   const toast = useGame((s) => s.toast)
@@ -63,6 +64,7 @@ function Modals() {
       {modal.type === 'trade' && <TradeModal />}
       {modal.type === 'help' && <HelpModal />}
       {modal.type === 'menu' && <MenuModal />}
+      {modal.type === 'panels' && <PanelsModal />}
       {modal.type === 'tile' && <TileModal index={modal.index} />}
       {modal.type === 'confirmBankrupt' && <ConfirmBankruptModal />}
       {shownCard && <CardModal />}
@@ -70,6 +72,17 @@ function Modals() {
       <DecisionPopups />
       {game.phase === 'gameOver' && !busy && <GameOverModal />}
     </>
+  )
+}
+
+/** En horizontal, jugadores y registro se abren en una ventana */
+function PanelsModal() {
+  const setModal = useGame((s) => s.setModal)
+  const t = useT()
+  return (
+    <Sheet title={t('tabs.players')} onClose={() => setModal({ type: 'none' })}>
+      <div className="pb-2"><Panels /></div>
+    </Sheet>
   )
 }
 
@@ -90,13 +103,13 @@ function GameScreen() {
       <Header className="land:hidden" />
       <main className="mx-auto max-w-6xl lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-4 lg:px-4 land:flex land:h-full land:max-w-none land:gap-0 land:px-0">
         {/* Horizontal: el tablero ocupa toda la altura a la izquierda */}
-        <div className="lg:sticky lg:top-16 lg:self-start land:static land:h-full land:shrink-0 land:pl-[env(safe-area-inset-left)]">
-          <div className="mx-auto w-full max-w-[min(100%,calc(100dvh-5rem))] land:w-[min(100dvh,62vw)] land:max-w-none">
+        <div className="lg:sticky lg:top-16 lg:self-start land:static land:h-full land:w-full land:py-1.5 land:pl-[max(0.375rem,env(safe-area-inset-left))] land:pr-[max(0.375rem,env(safe-area-inset-right))]">
+          <div className="mx-auto w-full max-w-[min(100%,calc(100dvh-5rem))] land:h-full land:max-w-none">
             <Board />
           </div>
         </div>
-        <div className="px-3 pt-3 lg:px-0 lg:pt-0 land:flex land:h-full land:min-w-0 land:flex-1 land:flex-col land:overflow-y-auto land:overscroll-contain land:px-0 land:pt-0 land:pr-[env(safe-area-inset-right)]">
-          <Header className="hidden land:flex" compact />
+        {/* En horizontal todo esto vive dentro del tablero (centro) */}
+        <div className="px-3 pt-3 lg:px-0 lg:pt-0 land:hidden">
           <div ref={bar} className="fixed inset-x-0 bottom-0 z-20 border-t border-ink/10 bg-arena/97 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-6px_20px_rgba(0,0,0,0.08)] backdrop-blur lg:static lg:mb-4 lg:rounded-2xl lg:border lg:bg-white lg:shadow-sm land:static land:mx-2 land:mb-2 land:rounded-xl land:border land:bg-white land:p-2 land:shadow-sm">
             <div className="mx-auto max-w-lg">
               <ActionBar />

@@ -234,3 +234,7 @@ button { -webkit-tap-highlight-color: transparent; }
   width: max(6px, calc(var(--bw, 375px) * 0.017)); height: max(6px, calc(var(--bw, 375px) * 0.017));
   box-shadow: 0 0 0 1px rgba(0,0,0,.2);
 }
+
+/* Acciones dentro del tablero (horizontal): botones algo más compactos */
+.hud-actions button { min-height: 2.4rem; font-size: .95rem }
+.hud-actions .space-y-2 > * + * { margin-top: .35rem }
