@@ -48,7 +48,7 @@ function Timer() {
   )
 }
 
-export function Header() {
+export function Header({ className = '', compact = false }: { className?: string; compact?: boolean }) {
   const game = useGame((s) => s.game)!
   const zoom = useGame((s) => s.zoom)
   const toggleZoom = useGame((s) => s.toggleZoom)
@@ -57,14 +57,14 @@ export function Header() {
   const qm = game.quickMode
   const iconBtn = 'grid h-10 min-w-10 place-items-center rounded-lg bg-white px-2 font-bold text-mar-deep border-2 border-mar/30'
   return (
-    <header className="sticky top-0 z-30 flex items-center gap-2 bg-arena/95 px-3 py-2 backdrop-blur">
+    <header className={`${compact ? 'sticky top-0 z-10 flex-wrap px-2 py-1.5' : 'sticky top-[env(safe-area-inset-top,0px)] z-30 px-3 py-2'} flex items-center gap-2 bg-arena/95 backdrop-blur ${className}`}>
       <span className="whitespace-nowrap font-display text-lg font-bold text-mar">BCN Tycoon</span>
       <span className="whitespace-nowrap text-sm opacity-80">
         {qm.type === 'rounds' ? t('ui.roundOf', { n: Math.min(game.round, qm.limit), max: qm.limit }) : t('ui.round', { n: game.round })}
       </span>
       <span className="text-sm"><Timer /></span>
       <span className="flex-1" />
-      <button type="button" className={`${iconBtn} lg:hidden`} onClick={toggleZoom} aria-pressed={zoom} aria-label={t('ui.zoom')}>
+      <button type="button" className={`${iconBtn} lg:hidden land:hidden`} onClick={toggleZoom} aria-pressed={zoom} aria-label={t('ui.zoom')}>
         {zoom ? '−' : '+'}🔍
       </button>
       <button type="button" className={iconBtn} onClick={() => setModal({ type: 'help' })} aria-label={t('ui.help')}>?</button>

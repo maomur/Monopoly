@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Móvil en horizontal: poca altura y más ancho que alto */
+@custom-variant land (@media (orientation: landscape) and (max-height: 600px));
+
 @theme {
   --color-mar: #0B5CAD;
   --color-mar-deep: #073B73;

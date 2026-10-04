@@ -69,21 +69,25 @@ function GameScreen() {
     return () => ro.disconnect()
   }, [])
   return (
-    <div className="min-h-dvh pb-[calc(var(--bar-h,11rem)+1rem)] lg:pb-4">
-      <Header />
-      <main className="mx-auto max-w-6xl lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-4 lg:px-4">
-        <div className="lg:sticky lg:top-16 lg:self-start">
-          <div className="mx-auto w-full max-w-[min(100%,calc(100dvh-5rem))]">
+    <div className="min-h-dvh pb-[calc(var(--bar-h,11rem)+1rem)] lg:pb-4 land:h-dvh land:min-h-0 land:overflow-hidden land:pb-0">
+      <Header className="land:hidden" />
+      <main className="mx-auto max-w-6xl lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-4 lg:px-4 land:flex land:h-full land:max-w-none land:gap-0 land:px-0">
+        {/* Horizontal: el tablero ocupa toda la altura a la izquierda */}
+        <div className="lg:sticky lg:top-16 lg:self-start land:static land:h-full land:shrink-0 land:pl-[env(safe-area-inset-left)]">
+          <div className="mx-auto w-full max-w-[min(100%,calc(100dvh-5rem))] land:h-full land:w-auto land:max-w-none land:aspect-square">
             <Board />
           </div>
         </div>
-        <div className="px-3 pt-3 lg:px-0 lg:pt-0">
-          <div ref={bar} className="fixed inset-x-0 bottom-0 z-20 border-t border-ink/10 bg-arena/97 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-6px_20px_rgba(0,0,0,0.08)] backdrop-blur lg:static lg:mb-4 lg:rounded-2xl lg:border lg:bg-white lg:shadow-sm">
+        <div className="px-3 pt-3 lg:px-0 lg:pt-0 land:flex land:h-full land:min-w-0 land:flex-1 land:flex-col land:overflow-y-auto land:overscroll-contain land:px-0 land:pt-0 land:pr-[env(safe-area-inset-right)]">
+          <Header className="hidden land:flex" compact />
+          <div ref={bar} className="fixed inset-x-0 bottom-0 z-20 border-t border-ink/10 bg-arena/97 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-6px_20px_rgba(0,0,0,0.08)] backdrop-blur lg:static lg:mb-4 lg:rounded-2xl lg:border lg:bg-white lg:shadow-sm land:static land:mx-2 land:mb-2 land:rounded-xl land:border land:bg-white land:p-2 land:shadow-sm">
             <div className="mx-auto max-w-lg">
               <ActionBar />
             </div>
           </div>
-          <Panels />
+          <div className="land:px-2 land:pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <Panels />
+          </div>
         </div>
       </main>
       <Modals />

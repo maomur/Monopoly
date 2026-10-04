@@ -120,11 +120,11 @@ export function Board() {
   return (
     <div
       ref={scroller}
-      className={`board-scroller relative mx-auto aspect-square w-full ${zoom ? 'overflow-auto' : 'overflow-hidden'}`}
+      className={`board-scroller relative mx-auto aspect-square w-full [container-type:inline-size] ${zoom ? 'overflow-auto' : 'overflow-hidden'}`}
     >
       <div
         className="relative aspect-square"
-        style={{ width: zoom ? '210%' : '100%', fontSize: zoom ? 'clamp(9px, 2.2vw, 13px)' : 'clamp(6px, 1.6vw, 11px)' }}
+        style={{ width: zoom ? '210%' : '100%', fontSize: zoom ? 'clamp(9px, 3.4cqw, 14px)' : 'clamp(6px, 1.7cqw, 13px)' }}
       >
         <div
           className="board-grid absolute inset-0 grid bg-mar"
