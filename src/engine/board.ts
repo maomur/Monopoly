@@ -18,8 +18,8 @@ export const TRANSPORT_RENTS = [25, 50, 100, 200] as const
 /** Multiplicador de servicios según cuántos posee el dueño (1–2) × dados */
 export const UTILITY_MULTIPLIERS = [4, 10] as const
 export const MAX_HOUSES = 4 // 5 = hotel
-export const BANK_HOUSES = 32
-export const BANK_HOTELS = 12
+export const HOTEL = 5
+export const MIN_FIRST_BID = 10
 
 /** Colores de grupo (UI). Paleta viva con buen contraste sobre blanco. */
 export const GROUP_COLORS: Record<ColorGroup, { bg: string; text: string }> = {
