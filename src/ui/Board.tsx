@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BOARD, GROUP_COLORS, HOTEL } from '../engine/board'
 import type { GameState } from '../engine/state'
 import { useGame } from '../store/gameStore'
@@ -96,6 +96,40 @@ export function Board() {
   const zoom = useGame((s) => s.zoom)
   const landingAt = useGame((s) => s.landingAt)
   const scroller = useRef<HTMLDivElement>(null)
+  // Ancho del tablero en px, medido una vez por cambio real (sin consultas de contenedor:
+  // en Safari provocaban recálculos en bucle al girar el móvil)
+  const [bw, setBw] = useState(0)
+  useEffect(() => {
+    const el = scroller.current
+    if (!el) return
+    let raf = 0
+    const measure = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const w = Math.round(el.clientWidth)
+        setBw((prev) => (Math.abs(prev - w) >= 2 ? w : prev))
+      })
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => {
+      ro.disconnect()
+      cancelAnimationFrame(raf)
+    }
+  }, [])
+  // En horizontal no hay botón de zoom: si venía activado desde vertical, se quita
+  const toggleZoom = useGame((s) => s.toggleZoom)
+  useEffect(() => {
+    const mq = window.matchMedia('(orientation: landscape) and (max-height: 600px)')
+    const check = () => {
+      if (mq.matches && useGame.getState().zoom) toggleZoom()
+    }
+    check()
+    mq.addEventListener('change', check)
+    return () => mq.removeEventListener('change', check)
+  }, [toggleZoom])
+  const clampPx = (min: number, v: number, max: number) => `${Math.max(min, Math.min(max, v))}px`
   const current = game.players[game.current]
   const focusPos = displayPos[game.current] ?? current.position
 
@@ -123,11 +157,12 @@ export function Board() {
   return (
     <div
       ref={scroller}
-      className={`board-scroller relative mx-auto aspect-square w-full [container-type:inline-size] ${zoom ? 'overflow-auto' : 'overflow-hidden'}`}
+      className={`board-scroller relative mx-auto aspect-square w-full ${zoom ? 'overflow-auto' : 'overflow-hidden'}`}
+      style={{ ['--bw' as string]: `${bw || 375}px` }}
     >
       <div
         className="relative aspect-square"
-        style={{ width: zoom ? '210%' : '100%', fontSize: zoom ? 'clamp(9px, 3.4cqw, 14px)' : 'clamp(6px, 1.7cqw, 13px)' }}
+        style={{ width: zoom ? '210%' : '100%', fontSize: zoom ? clampPx(9, bw * 0.034, 14) : clampPx(6, bw * 0.017, 13) }}
       >
         <div
           className="board-grid absolute inset-0 grid bg-mar"

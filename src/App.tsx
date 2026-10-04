@@ -91,7 +91,7 @@ function GameScreen() {
       <main className="mx-auto max-w-6xl lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-4 lg:px-4 land:flex land:h-full land:max-w-none land:gap-0 land:px-0">
         {/* Horizontal: el tablero ocupa toda la altura a la izquierda */}
         <div className="lg:sticky lg:top-16 lg:self-start land:static land:h-full land:shrink-0 land:pl-[env(safe-area-inset-left)]">
-          <div className="mx-auto w-full max-w-[min(100%,calc(100dvh-5rem))] land:h-full land:w-auto land:max-w-none land:aspect-square">
+          <div className="mx-auto w-full max-w-[min(100%,calc(100dvh-5rem))] land:w-[min(100dvh,62vw)] land:max-w-none">
             <Board />
           </div>
         </div>
@@ -118,6 +118,23 @@ export default function App() {
   useEffect(() => {
     document.documentElement.lang = lang
   }, [lang])
+  // Al girar el móvil el navegador redimensiona varias veces seguidas: apagamos las
+  // transiciones hasta que se estabiliza para que las fichas no "persigan" su sitio
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const onResize = () => {
+      document.documentElement.classList.add('resizing')
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => document.documentElement.classList.remove('resizing'), 600)
+    }
+    window.addEventListener('resize', onResize)
+    window.addEventListener('orientationchange', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('orientationchange', onResize)
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
   return (
     <>
       {game ? <GameScreen /> : <Setup />}

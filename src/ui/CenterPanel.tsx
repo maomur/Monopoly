@@ -55,10 +55,10 @@ function Die3D({ value, seq, index }: { value: number; seq: number; index: numbe
     const turnsX = seq * 3 + 2 + Math.floor(r(1) * 2)
     const turnsY = seq * 3 + 2 + Math.floor(r(2) * 3)
     const turnsZ = seq === 0 ? 0 : 1 + Math.floor(r(3) * 2)
-    // Pequeña inclinación final para que no parezcan pegados al tablero
-    const tilt = seq === 0 ? 0 : (r(4) - 0.5) * 16
+    // Inclinación final leve: se lee bien el número y se nota que es un dado
+    const tilt = seq === 0 ? 0 : (r(4) - 0.5) * 8
     // Orden: primero deja la cara al frente (Y, X), luego inclina hacia el jugador y gira en el plano (Z)
-    return `rotateZ(${360 * turnsZ + tilt}deg) rotateX(${sx + 360 * turnsX - 20}deg) rotateY(${sy + 360 * turnsY}deg)`
+    return `rotateZ(${360 * turnsZ + tilt}deg) rotateX(${sx + 360 * turnsX - 7}deg) rotateY(${sy + 360 * turnsY}deg)`
   }, [value, seq, index])
 
   // El cubo no se vuelve a montar (si no, no habría transición de giro): el salto se lanza a mano

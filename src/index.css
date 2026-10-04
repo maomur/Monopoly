@@ -142,7 +142,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 /* ===================== Dados 3D ===================== */
 .die-scene {
-  --die: 17cqw;
+  --die: calc(var(--bw, 375px) * 0.11);
   position: relative; width: var(--die); height: var(--die); isolation: isolate;
   perspective: 700px;
 }
@@ -165,3 +165,6 @@ button { -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
   .die-cube { transition: none }
 }
+
+/* Mientras se gira la pantalla: nada de transiciones */
+.resizing *, .resizing *::before, .resizing *::after { transition: none !important }
