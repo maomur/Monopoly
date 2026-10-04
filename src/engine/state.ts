@@ -114,7 +114,7 @@ export type GameEvent =
       /** A quién se paga (null = banca) */
       toId?: string | null
     }
-  | { type: 'bankrupt'; playerId: string }
+  | { type: 'bankrupt'; playerId: string; creditorId?: string | null }
   | { type: 'bid'; playerId: string; amount: number }
   | { type: 'trade'; accepted: boolean }
   | { type: 'mortgage'; tile: number; mortgaged: boolean }

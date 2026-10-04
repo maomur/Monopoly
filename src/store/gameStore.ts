@@ -30,6 +30,7 @@ export type LandEvent = Extract<GameEvent, { type: 'land' }>
 /** Resultados que merecen ventana: para humanos casi todo, para bots solo lo que cuesta dinero o cárcel */
 const HUMAN_LANDING = new Set(['own', 'mortgaged', 'rent', 'tax', 'goToJail', 'parking', 'visit'])
 const BOT_LANDING = new Set(['rent', 'tax', 'goToJail'])
+const BANKRUPT_MS = 6500
 const BOT_LANDING_MS = 2600
 
 // Ritmo de la partida (ms). Más lento para poder seguir la ficha.
@@ -74,6 +75,8 @@ interface Store {
   shownCard: { cardId: string; playerId: string } | null
   /** Ventana de "has caído en…" que se está mostrando */
   shownLanding: LandEvent | null
+  /** Anuncio a pantalla completa de una bancarrota */
+  shownBankrupt: { playerId: string; creditorId: string | null } | null
   modal: Modal
   zoom: boolean
   toast: { text: string; id: number } | null
@@ -106,6 +109,7 @@ interface Store {
   dispatch: (a: Action) => void
   dismissCard: () => void
   dismissLanding: () => void
+  dismissBankrupt: () => void
   setLang: (l: Lang) => void
   toggleMute: () => void
   setSound: (on: boolean) => void
@@ -131,7 +135,7 @@ export const useGame = create<Store>((set, get) => {
     if (stepTimer) return
     const { queue, game } = get()
     if (!game) return
-    if (get().shownCard || get().shownLanding) return // esperando a que se cierre la ventana
+    if (get().shownCard || get().shownLanding || get().shownBankrupt) return // esperando a que se cierre la ventana
     const e = queue[0]
     if (!e) {
       // Fin de la cola: el dinero mostrado coincide con el real
@@ -205,6 +209,12 @@ export const useGame = create<Store>((set, get) => {
         next(MONEY_STAGGER_MS)
         return
       }
+      case 'bankrupt': {
+        sfx.bankrupt()
+        set({ queue: queue.slice(1), shownBankrupt: { playerId: e.playerId, creditorId: e.creditorId ?? null } })
+        stepTimer = setTimeout(() => { stepTimer = null; get().dismissBankrupt() }, BANKRUPT_MS)
+        return
+      }
       case 'groupComplete':
         sfx.fanfare()
         set({ queue: queue.slice(1), celebrate: Date.now() })
@@ -229,7 +239,6 @@ export const useGame = create<Store>((set, get) => {
           case 'bid': sfx.bid(); break
           case 'auctionEnd': sfx.gavel(!!e.winnerId); break
           case 'trade': if (e.accepted) sfx.deal(); else sfx.noDeal(); break
-          case 'bankrupt': sfx.bankrupt(); break
           case 'gameOver': sfx.victory(); break
         }
         set({ queue: queue.slice(1) })
@@ -240,9 +249,9 @@ export const useGame = create<Store>((set, get) => {
   function scheduleBot() {
     if (botTimer) clearTimeout(botTimer)
     botTimer = null
-    const { game, busy, shownCard, shownLanding, online } = get()
+    const { game, busy, shownCard, shownLanding, shownBankrupt, online } = get()
     // En online los bots los juega el servidor
-    if (online || !game || busy || shownCard || shownLanding || game.phase === 'gameOver') return
+    if (online || !game || busy || shownCard || shownLanding || shownBankrupt || game.phase === 'gameOver') return
     const id = actorId(game)
     if (!id || !getPlayer(game, id).isBot) return
     botTimer = setTimeout(() => {
@@ -268,7 +277,7 @@ export const useGame = create<Store>((set, get) => {
       queue: [],
       busy: false,
       shownCard: null,
-      shownLanding: null,
+      shownLanding: null, shownBankrupt: null,
       modal: { type: 'none' },
     })
     if (!get().online) saveGame(game)
@@ -314,7 +323,7 @@ export const useGame = create<Store>((set, get) => {
         set({ online: { ...o, room: msg.room, you: msg.you, myPlayerId, error: null } })
         if (msg.room.phase === 'lobby' && get().game) {
           // Revancha: volver a la sala
-          set({ game: null, queue: [], busy: false, shownCard: null, shownLanding: null, modal: { type: 'none' } })
+          set({ game: null, queue: [], busy: false, shownCard: null, shownLanding: null, shownBankrupt: null, modal: { type: 'none' } })
         }
         return
       }
@@ -356,7 +365,7 @@ export const useGame = create<Store>((set, get) => {
     busy: false,
     queue: [],
     shownCard: null,
-    shownLanding: null,
+    shownLanding: null, shownBankrupt: null,
     modal: { type: 'none' },
     rolling: false,
     rollSeq: 0,
@@ -389,7 +398,7 @@ export const useGame = create<Store>((set, get) => {
       forgetRoom()
       if (stepTimer) clearTimeout(stepTimer)
       stepTimer = null
-      set({ online: null, game: null, queue: [], busy: false, shownCard: null, shownLanding: null, modal: { type: 'none' } })
+      set({ online: null, game: null, queue: [], busy: false, shownCard: null, shownLanding: null, shownBankrupt: null, modal: { type: 'none' } })
     },
 
     newGame: (players, quick) => {
@@ -411,7 +420,7 @@ export const useGame = create<Store>((set, get) => {
       stepTimer = null
       botTimer = null
       const g = get().game
-      set({ game: null, savedGame: g && g.phase !== 'gameOver' ? g : null, modal: { type: 'none' }, queue: [], busy: false, shownCard: null, shownLanding: null })
+      set({ game: null, savedGame: g && g.phase !== 'gameOver' ? g : null, modal: { type: 'none' }, queue: [], busy: false, shownCard: null, shownLanding: null, shownBankrupt: null })
     },
 
     dispatch: (a) => {
@@ -437,6 +446,13 @@ export const useGame = create<Store>((set, get) => {
 
     dismissCard: () => {
       set({ shownCard: null })
+      pump()
+    },
+
+    dismissBankrupt: () => {
+      if (stepTimer) { clearTimeout(stepTimer); stepTimer = null }
+      if (!get().shownBankrupt) return
+      set({ shownBankrupt: null })
       pump()
     },
 

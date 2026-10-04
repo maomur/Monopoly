@@ -276,6 +276,7 @@ export function animationBudgetMs(events: GameEvent[]): number {
       case 'card': ms += 2800; break
       case 'money': ms += 260; break
       case 'groupComplete': ms += 400; break
+      case 'bankrupt': ms += 6500; break
     }
   }
   return Math.min(ms, 15000)

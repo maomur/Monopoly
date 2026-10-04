@@ -259,3 +259,32 @@ button { -webkit-tap-highlight-color: transparent; }
 @keyframes splash-out { to { opacity: 0; transform: scale(1.04) } }
 .splash-out { animation: splash-out 450ms ease-in forwards }
 @media (prefers-reduced-motion: reduce) { .splash-pop, .splash-rise, .splash-out { animation: none } .splash-out { opacity: 0 } }
+
+/* ── Bancarrota: pantalla oscura, ficha que se apaga y sello que golpea ── */
+.bankrupt-overlay {
+  background: radial-gradient(ellipse at center, rgba(120, 16, 24, 0.55), rgba(10, 8, 20, 0.88));
+  animation: bk-fade 0.35s ease-out both;
+}
+.bankrupt-card { animation: bk-rise 0.45s ease-out both, bk-shake 0.5s 0.55s cubic-bezier(.36,.07,.19,.97) }
+.bankrupt-token { animation: bk-drain 1.1s 0.25s ease-in both }
+.bankrupt-stamp {
+  transform: translate(-50%, -50%) rotate(-14deg);
+  background: rgba(26, 26, 46, 0.85);
+  animation: bk-stamp 0.32s 0.5s cubic-bezier(.2,1.6,.4,1) both;
+}
+@keyframes bk-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes bk-rise { from { opacity: 0; transform: translateY(24px) scale(.94) } to { opacity: 1; transform: none } }
+@keyframes bk-drain { from { filter: none; transform: scale(1) } to { filter: grayscale(1) brightness(.55); transform: scale(.92) } }
+@keyframes bk-stamp {
+  from { opacity: 0; transform: translate(-50%, -50%) rotate(-14deg) scale(3.2) }
+  to { opacity: 1; transform: translate(-50%, -50%) rotate(-14deg) scale(1) }
+}
+@keyframes bk-shake {
+  10%, 90% { transform: translateX(-2px) }
+  20%, 80% { transform: translateX(4px) }
+  30%, 50%, 70% { transform: translateX(-7px) }
+  40%, 60% { transform: translateX(7px) }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bankrupt-overlay, .bankrupt-card, .bankrupt-token, .bankrupt-stamp { animation-duration: 0.01s; animation-delay: 0s }
+}

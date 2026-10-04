@@ -305,7 +305,7 @@ function eliminate(s: GameState, debtorId: string, creditorId: string | null) {
   s.debts = s.debts
     .filter((d) => d.debtorId !== debtorId)
     .map((d) => (d.creditorId === debtorId ? { ...d, creditorId: null } : d))
-  emit(s, { type: 'bankrupt', playerId: debtorId })
+  emit(s, { type: 'bankrupt', playerId: debtorId, creditorId })
 }
 
 function finishAuction(s: GameState) {

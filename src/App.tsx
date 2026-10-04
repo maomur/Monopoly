@@ -9,6 +9,7 @@ import { ManageModal } from './ui/modals/ManageModal'
 import {
   CardModal, ConfirmBankruptModal, GameOverModal, HelpModal, MenuModal, TileModal,
 } from './ui/modals/Modals'
+import { BankruptPopup } from './ui/popups/BankruptPopup'
 import { TradeModal } from './ui/modals/TradeModal'
 import { Panels } from './ui/Panels'
 import { DecisionPopups, LandingPopup } from './ui/popups/GamePopups'
@@ -59,6 +60,7 @@ function Modals() {
   const modal = useGame((s) => s.modal)
   const game = useGame((s) => s.game)!
   const shownCard = useGame((s) => s.shownCard)
+  const shownBankrupt = useGame((s) => s.shownBankrupt)
   const shownLanding = useGame((s) => s.shownLanding)
   const busy = useGame((s) => s.busy)
   return (
@@ -70,6 +72,7 @@ function Modals() {
       {modal.type === 'panels' && <PanelsModal />}
       {modal.type === 'tile' && <TileModal index={modal.index} />}
       {modal.type === 'confirmBankrupt' && <ConfirmBankruptModal />}
+      {shownBankrupt && <BankruptPopup />}
       {shownCard && <CardModal />}
       {shownLanding && !shownCard && <LandingPopup />}
       <DecisionPopups />
