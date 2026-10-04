@@ -33,12 +33,13 @@ function centerPct(i: number): { x: number; y: number } {
   }
 }
 
-// Banda de color del grupo: siempre en el lado que mira al centro del tablero
+// Banda de color del grupo: siempre en el lado que mira al centro del tablero.
+// El puntito del dueño va en la esquina exterior, lejos de la banda.
 const BAND = {
-  bottom: { band: 'top-0 inset-x-0 h-[26%]', pad: 'pt-[28%]', strip: 'bottom-0 inset-x-0 h-[11%]', padOwner: 'pb-[12%]', dots: 'flex-row' },
-  top: { band: 'bottom-0 inset-x-0 h-[26%]', pad: 'pb-[28%]', strip: 'top-0 inset-x-0 h-[11%]', padOwner: 'pt-[12%]', dots: 'flex-row' },
-  left: { band: 'right-0 inset-y-0 w-[16%]', pad: 'pr-[17%]', strip: 'left-0 inset-y-0 w-[6%]', padOwner: 'pl-[7%]', dots: 'flex-col' },
-  right: { band: 'left-0 inset-y-0 w-[16%]', pad: 'pl-[17%]', strip: 'right-0 inset-y-0 w-[6%]', padOwner: 'pr-[7%]', dots: 'flex-col' },
+  bottom: { band: 'top-0 inset-x-0 h-[26%]', pad: 'pt-[28%]', dot: 'bottom-[5%] right-[6%]', dots: 'flex-row' },
+  top: { band: 'bottom-0 inset-x-0 h-[26%]', pad: 'pb-[28%]', dot: 'top-[5%] right-[6%]', dots: 'flex-row' },
+  left: { band: 'right-0 inset-y-0 w-[16%]', pad: 'pr-[17%]', dot: 'bottom-[7%] left-[4%]', dots: 'flex-col' },
+  right: { band: 'left-0 inset-y-0 w-[16%]', pad: 'pl-[17%]', dot: 'bottom-[7%] right-[4%]', dots: 'flex-col' },
 }
 
 // Esquinas: un tono propio y un icono grande
@@ -77,7 +78,6 @@ function Cell({ game, index, current, landing }: { game: GameState; index: numbe
           'tile-block absolute flex flex-col items-center justify-center overflow-hidden text-center leading-[1.05]',
           corner ? `${CORNER_TINT[t.kind]} gap-[0.25em] font-display font-semibold` : 'bg-white gap-[0.15em]',
           t.kind === 'property' ? geo.pad : '',
-          owner ? geo.padOwner : '',
           own?.mortgaged ? 'tile-mortgaged' : '',
         ].join(' ')}
       >
@@ -88,7 +88,13 @@ function Cell({ game, index, current, landing }: { game: GameState; index: numbe
             {own?.houses === HOTEL && <span className="tile-hotel" />}
           </span>
         )}
-        {owner && <span className={`absolute ${geo.strip}`} style={{ background: owner.color }} />}
+        {owner && (
+          <span
+            className={`tile-owner absolute ${geo.dot} rounded-full border border-white`}
+            style={{ background: owner.color }}
+            aria-hidden="true"
+          />
+        )}
 
         <span className={`relative flex w-full items-center justify-center ${sideways ? 'flex-row gap-[0.35em]' : 'flex-col gap-[0.15em]'}`}>
           {glyph && <TileGlyph name={glyph} className={corner ? 'h-[2.6em] w-[2.6em]' : sideways ? 'h-[1.5em] w-[1.5em] shrink-0 text-mar-deep' : 'h-[1.9em] w-[1.9em] shrink-0 text-mar-deep'} />}
