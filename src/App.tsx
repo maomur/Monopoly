@@ -14,6 +14,7 @@ import { TradeModal } from './ui/modals/TradeModal'
 import { Panels } from './ui/Panels'
 import { DecisionPopups, LandingPopup } from './ui/popups/GamePopups'
 import { Setup } from './ui/Setup'
+import { Home } from './ui/Home'
 import { Splash } from './ui/Splash'
 import { Lobby } from './ui/Lobby'
 import { useT } from './ui/useT'
@@ -136,6 +137,7 @@ function GameScreen() {
 }
 
 export default function App() {
+  const city = useGame((s) => s.city)
   const game = useGame((s) => s.game)
   const online = useGame((s) => s.online)
   const lang = useGame((s) => s.lang)
@@ -164,7 +166,7 @@ export default function App() {
   }, [])
   return (
     <>
-      {game ? <GameScreen /> : online ? <Lobby /> : <Setup />}
+      {game ? <GameScreen /> : online ? <Lobby /> : city ? <Setup /> : <Home />}
       <Toast />
       {game && <Celebrate />}
       {game && <MoneyLayer />}

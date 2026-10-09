@@ -1,6 +1,7 @@
 // Mensajes entre los móviles y el servidor de salas (compartido cliente/servidor).
 import type { Action } from '../engine/actions'
 import type { BotLevel, GameEvent, GameState, TokenId } from '../engine/state'
+import type { CityId } from '../cities/types'
 
 export type QuickSetup = { type: 'none' } | { type: 'rounds'; limit: number } | { type: 'time'; minutes: number }
 
@@ -21,12 +22,13 @@ export interface PublicRoom {
   phase: 'lobby' | 'playing'
   seats: Seat[]
   hostSeatId: string | null
+  city: CityId
   quick: QuickSetup
 }
 
 export type ClientMsg =
   /** Identificarse con la clave secreta del móvil (se guarda en localStorage) */
-  | { t: 'hello'; key: string; create: boolean }
+  | { t: 'hello'; key: string; create: boolean; city?: CityId }
   | { t: 'join'; name: string; token: TokenId }
   | { t: 'update'; name: string; token: TokenId }
   | { t: 'addBot'; level?: BotLevel }

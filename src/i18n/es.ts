@@ -2,6 +2,11 @@
 export const es = {
   // ---- Casillas especiales ----
   'tile.go': 'SALIDA · Plaça d’Espanya',
+  'short.jail': 'Ronda',
+  'short.parking': 'Ciutadella',
+  'short.goToJail': 'ZBE',
+  'short.sorpresa': 'Sorpresa',
+  'short.festa': 'Festa',
   'tile.go.short': 'SALIDA',
   'tile.jail': 'Atasco en la Ronda de Dalt',
   'tile.jail.visit': 'Solo de paso',
@@ -79,6 +84,16 @@ export const es = {
   'card.f16': 'Encuentras un billete en la arena de la Barceloneta: cobra 10 €.',
 
   // ---- UI general ----
+  'home.title': 'Elige tu ciudad',
+  'home.subtitle': 'El mismo juego, una ciudad nueva que conquistar',
+  'home.new': 'Nuevo',
+  'home.soon': 'Próximamente',
+  'home.soonToast': '¡{city} llega muy pronto!',
+  'home.continue': 'Continuar tu partida en {city}',
+  'home.back': 'Ciudades',
+  'home.tag.bcn': 'Compra Barcelona, barrio a barrio',
+  'home.tag.roma': 'Compra Roma, barrio a barrio',
+  'home.tag.medellin': 'Compra Medellín, comuna a comuna',
   'app.title': 'BCN Tycoon',
   'app.tagline': 'Compra Barcelona, barrio a barrio',
   'ui.language': 'Idioma',

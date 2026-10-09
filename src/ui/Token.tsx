@@ -1,4 +1,5 @@
 import type { TokenId } from '../engine/state'
+import { activeCity } from '../cities'
 
 // Fichas originales, trazos simples (se pulirán en la fase de diseño)
 const PATHS: Record<TokenId, React.ReactNode> = {
@@ -67,10 +68,51 @@ export const TOKEN_LABEL_KEY: Record<TokenId, string> = {
   panot: 'token.panot',
 }
 
+/** Fichas de Roma (las que no aparecen se comparten con Barcelona) */
+const ROMA_PATHS: Partial<Record<TokenId, React.ReactNode>> = {
+  // Coliseo: dos pisos de arcos (huecos recortados) y el borde roto
+  sagrada: (
+    <g fill="currentColor">
+      <path fillRule="evenodd" d="M2 21 V10 Q2 6 12 6 Q22 6 22 9 V21Z M4.5 13 v-2 a1.2 1.2 0 0 1 2.4 0 v2Z M4.5 19 v-2.5 a1.2 1.2 0 0 1 2.4 0 V19Z M8.5 13 v-2 a1.2 1.2 0 0 1 2.4 0 v2Z M8.5 19 v-2.5 a1.2 1.2 0 0 1 2.4 0 V19Z M12.5 13 v-2 a1.2 1.2 0 0 1 2.4 0 v2Z M12.5 19 v-2.5 a1.2 1.2 0 0 1 2.4 0 V19Z M16.5 13 v-2 a1.2 1.2 0 0 1 2.4 0 v2Z M16.5 19 v-2.5 a1.2 1.2 0 0 1 2.4 0 V19Z" />
+      <path d="M17 6 L22 4 V9Z" />
+    </g>
+  ),
+  // Vespa de lado
+  patinete: (
+    <g fill="currentColor">
+      <path d="M5 16 Q5 11 10 11 H13 L15 6 H17 L15.5 11 Q20 11 20 16Z" />
+      <rect x="14" y="4.5" width="5" height="1.8" rx="0.9" />
+      <circle cx="6.5" cy="18" r="2.4" />
+      <circle cx="18" cy="18" r="2.4" />
+      <rect x="8" y="9.2" width="5" height="1.8" rx="0.9" />
+    </g>
+  ),
+  // Cucurucho de helado con dos bolas
+  castell: (
+    <g fill="currentColor">
+      <circle cx="9.5" cy="8" r="3.6" />
+      <circle cx="14.5" cy="8" r="3.6" />
+      <circle cx="12" cy="4.6" r="3.2" />
+      <path d="M6.5 11 H17.5 L12 22.5Z" />
+      <path d="M8.5 13.5 L14 18 M15.5 13.5 L10 18" stroke="#fff" strokeWidth="1" opacity=".7" />
+    </g>
+  ),
+  // Sampietrino: adoquines en diagonal
+  panot: (
+    <g fill="currentColor" transform="rotate(45 12 12)">
+      <rect x="5" y="5" width="6.4" height="6.4" rx="1.2" />
+      <rect x="12.6" y="5" width="6.4" height="6.4" rx="1.2" />
+      <rect x="5" y="12.6" width="6.4" height="6.4" rx="1.2" />
+      <rect x="12.6" y="12.6" width="6.4" height="6.4" rx="1.2" />
+    </g>
+  ),
+}
+
 export function TokenIcon({ token, className }: { token: TokenId; className?: string }) {
+  const path = (activeCity() === 'roma' && ROMA_PATHS[token]) || PATHS[token]
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      {PATHS[token]}
+      {path}
     </svg>
   )
 }

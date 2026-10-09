@@ -67,6 +67,8 @@ function OnlineCard({ name, token }: { name: string; token: TokenId }) {
 }
 
 export function Setup() {
+  const city = useGame((s) => s.city) ?? 'bcn'
+  const chooseCity = useGame((s) => s.chooseCity)
   const t = useT()
   const newGame = useGame((s) => s.newGame)
   const saved = useGame((s) => s.savedGame)
@@ -100,10 +102,13 @@ export function Setup() {
   const qid = (q: QuickSetup) => (q.type === 'none' ? 'none' : q.type === 'rounds' ? `r${q.limit}` : `t${q.minutes}`)
 
   return (
-    <main className="mx-auto max-w-lg px-4 pb-10 pt-4">
+    <main className="mx-auto max-w-lg px-4 pb-10 pt-[max(1rem,env(safe-area-inset-top))]">
+      <button type="button" onClick={() => chooseCity(null)} className="mb-2 inline-flex min-h-10 items-center gap-1 rounded-full bg-white px-3 text-sm font-semibold text-mar-deep shadow-sm ring-1 ring-ink/10">
+        ← {t('home.back')}
+      </button>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-4xl font-bold text-mar">BCN Tycoon</h1>
+          <h1 className="font-display text-4xl font-bold text-mar">{t('app.title')}</h1>
           <p className="text-terracota">{t('app.tagline')}</p>
         </div>
         <LangToggle />
@@ -113,7 +118,7 @@ export function Setup() {
 
       {onlineAvailable() && <h2 className="mt-8 font-display text-xl font-semibold">📱 {t('online.localTitle')}</h2>}
 
-      {saved && (
+      {saved && (saved.city ?? 'bcn') === city && (
         <div className="mt-4 rounded-xl border-2 border-olivo/40 bg-white p-3">
           <p className="text-sm">{t('setup.savedGame', { names: saved.players.map((p) => p.name).join(', '), round: saved.round })}</p>
           <ActionButton big variant="primary" className="mt-2 w-full" onClick={continueGame}>

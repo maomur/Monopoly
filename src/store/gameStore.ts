@@ -9,6 +9,8 @@ import { createGame, type GameEvent, type GameState, type PlayerSetup, type Quic
 import { translate, type Lang } from '../i18n'
 import { setMuted, sfx } from '../audio/sfx'
 import { OnlineConnection } from '../online/client'
+import { roomFromUrl } from '../online/config'
+import { setActiveCity, type CityId } from '../cities'
 import { newRoomCode, normalizeCode, type ClientMsg, type PublicRoom, type ServerMsg } from '../online/protocol'
 import { deviceKey, forgetRoom, rememberRoom } from '../online/identity'
 import { loadGame, loadPrefs, saveGame, savePrefs } from './persistence'
@@ -63,6 +65,9 @@ export interface MoneyFx {
 
 interface Store {
   lang: Lang
+  /** Ciudad elegida en la página principal (null = página principal) */
+  city: CityId | null
+  chooseCity: (c: CityId | null) => void
   muted: boolean
   game: GameState | null
   savedGame: GameState | null
@@ -264,6 +269,8 @@ export const useGame = create<Store>((set, get) => {
   }
 
   function start(game: GameState) {
+    setActiveCity(game.city ?? 'bcn')
+    set({ city: game.city ?? 'bcn' })
     if (stepTimer) clearTimeout(stepTimer)
     stepTimer = null
     set({
@@ -320,6 +327,10 @@ export const useGame = create<Store>((set, get) => {
     switch (msg.t) {
       case 'room': {
         const myPlayerId = msg.room.seats.find((s) => s.id === msg.you)?.playerId ?? null
+        if (msg.room.city && msg.room.city !== get().city) {
+          setActiveCity(msg.room.city)
+          set({ city: msg.room.city })
+        }
         set({ online: { ...o, room: msg.room, you: msg.you, myPlayerId, error: null } })
         if (msg.room.phase === 'lobby' && get().game) {
           // Revancha: volver a la sala
@@ -345,7 +356,7 @@ export const useGame = create<Store>((set, get) => {
       onOpen: () => {
         const o = get().online
         if (o) set({ online: { ...o, status: 'open' } })
-        conn?.send({ t: 'hello', key: deviceKey(), create })
+        conn?.send({ t: 'hello', key: deviceKey(), create, city: get().city ?? 'bcn' })
         if (join) conn?.send({ t: 'join', name: join.name, token: join.token })
       },
       onClose: () => {
@@ -358,6 +369,12 @@ export const useGame = create<Store>((set, get) => {
 
   return {
     lang: prefs.lang,
+    // Con un enlace de invitación se entra directo (la ciudad la dice la sala)
+    city: roomFromUrl() ? 'bcn' : null,
+    chooseCity: (c) => {
+      if (c) setActiveCity(c)
+      set({ city: c })
+    },
     muted: prefs.muted,
     game: null,
     savedGame: loadGame(),
@@ -402,7 +419,7 @@ export const useGame = create<Store>((set, get) => {
     },
 
     newGame: (players, quick) => {
-      start(createGame({ players, quickMode: quick, seed: randomSeed(), now: Date.now() }))
+      start(createGame({ players, quickMode: quick, seed: randomSeed(), now: Date.now(), city: get().city ?? 'bcn' }))
     },
 
     continueGame: () => {

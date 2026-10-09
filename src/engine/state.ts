@@ -123,8 +123,12 @@ export type GameEvent =
   | { type: 'auctionEnd'; winnerId: string | null }
   | { type: 'gameOver'; winnerId: string }
 
+import type { CityId } from '../cities/types'
+
 export interface GameState {
   version: number
+  /** Ciudad del tablero (solo cambia nombres y textos; sin ciudad = Barcelona) */
+  city?: CityId
   players: Player[]
   current: number
   phase: Phase
@@ -167,6 +171,7 @@ export interface PlayerSetup {
 }
 
 export interface GameSetup {
+  city?: CityId
   players: PlayerSetup[]
   quickMode?: { type: 'none' } | { type: 'rounds'; limit: number } | { type: 'time'; minutes: number }
   seed: number
@@ -211,6 +216,7 @@ export function createGame(setup: GameSetup): GameState {
 
   return {
     version: STATE_VERSION,
+    city: setup.city ?? 'bcn',
     players,
     current: 0,
     phase: 'awaitRoll',

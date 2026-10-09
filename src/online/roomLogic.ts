@@ -6,6 +6,7 @@ import { currentPlayer } from '../engine/queries'
 import { applyAction } from '../engine/reducer'
 import { createGame, TOKENS, type GameEvent, type GameState } from '../engine/state'
 import { managerId } from '../engine/validate'
+import type { CityId } from '../cities/types'
 import { MAX_SEATS, type ClientMsg, type PublicRoom, type QuickSetup, type Seat } from './protocol'
 
 interface PrivateSeat extends Seat {
@@ -16,6 +17,8 @@ interface PrivateSeat extends Seat {
 export interface RoomData {
   /** La sala existe porque alguien la creó (unirse a un código inventado da error) */
   created: boolean
+  /** Ciudad elegida por quien creó la sala */
+  city?: CityId
   phase: 'lobby' | 'playing'
   seats: PrivateSeat[]
   hostSeatId: string | null
@@ -60,6 +63,7 @@ export class RoomLogic {
       phase: this.data.phase,
       seats: this.data.seats.map(({ key: _key, ...s }) => s),
       hostSeatId: this.data.hostSeatId,
+      city: this.data.city ?? 'bcn',
       quick: this.data.quick,
     }
   }
@@ -94,7 +98,10 @@ export class RoomLogic {
 
     switch (msg.t) {
       case 'hello':
-        if (msg.create && !d.created) d.created = true
+        if (msg.create && !d.created) {
+          d.created = true
+          d.city = msg.city ?? 'bcn'
+        }
         if (!d.created) return { error: 'roomNotFound' }
         if (seat) {
           seat.connected = true
@@ -178,6 +185,7 @@ export class RoomLogic {
         d.game = createGame({
           seed: (Math.random() * 2 ** 32) >>> 0,
           now,
+          city: d.city ?? 'bcn',
           quickMode: d.quick,
           players: d.seats.map((s) => ({ name: s.name, token: s.token, isBot: s.isBot, botLevel: s.botLevel })),
         })

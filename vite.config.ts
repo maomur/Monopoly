@@ -14,9 +14,9 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'BCN Tycoon',
-        short_name: 'BCN Tycoon',
-        description: 'Juego de mesa de compraventa de barrios de Barcelona para 2 a 4 jugadores en el mismo móvil.',
+        name: 'Tycoon',
+        short_name: 'Tycoon',
+        description: 'Juego de mesa de compraventa de barrios: Barcelona, Roma y más ciudades. De 2 a 4 jugadores, en el mismo móvil u online.',
         lang: 'es',
         start_url: '/',
         scope: '/',

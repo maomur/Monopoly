@@ -1,6 +1,7 @@
 import { BOARD } from '../engine/board'
 import type { LogEntry } from '../engine/state'
 import { formatMoney, translate, type Lang } from '../i18n'
+import { cityString } from '../cities'
 
 /** Nombre visible de una casilla en el idioma actual */
 export function tileName(lang: Lang, index: number): string {
@@ -9,7 +10,7 @@ export function tileName(lang: Lang, index: number): string {
   if (t.kind === 'card') return translate(lang, `deck.${t.deck}`)
   if (t.kind === 'go') return translate(lang, 'tile.go.short')
   if (t.kind === 'jail' || t.kind === 'parking' || t.kind === 'goToJail') return translate(lang, t.nameKey)
-  return t.name
+  return cityString(lang, `tname.${index}`) ?? t.name
 }
 
 /** Nombre corto para la celda del tablero */
@@ -17,12 +18,12 @@ export function tileShort(lang: Lang, index: number): string {
   const t = BOARD[index]
   switch (t.kind) {
     case 'go': return translate(lang, 'tile.go.short')
-    case 'jail': return 'Ronda'
-    case 'parking': return 'Ciutadella'
-    case 'goToJail': return 'ZBE'
-    case 'card': return t.deck === 'sorpresa' ? 'Sorpresa' : 'Festa'
+    case 'jail': return translate(lang, 'short.jail')
+    case 'parking': return translate(lang, 'short.parking')
+    case 'goToJail': return translate(lang, 'short.goToJail')
+    case 'card': return translate(lang, t.deck === 'sorpresa' ? 'short.sorpresa' : 'short.festa')
     case 'tax': return translate(lang, t.nameKey)
-    default: return t.name
+    default: return cityString(lang, `tname.${index}`) ?? t.name
   }
 }
 

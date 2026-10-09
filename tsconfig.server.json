@@ -11,5 +11,5 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["server", "src/engine", "src/online/protocol.ts", "src/online/roomLogic.ts"]
+  "include": ["server", "src/engine", "src/cities/types.ts", "src/online/protocol.ts", "src/online/roomLogic.ts"]
 }

@@ -4,6 +4,11 @@ import type { Dict } from './es'
 export const ca: Dict = {
   // ---- Caselles especials ----
   'tile.go': 'SORTIDA · Plaça d’Espanya',
+  'short.jail': 'Ronda',
+  'short.parking': 'Ciutadella',
+  'short.goToJail': 'ZBE',
+  'short.sorpresa': 'Sorpresa',
+  'short.festa': 'Festa',
   'tile.go.short': 'SORTIDA',
   'tile.jail': 'Embús a la Ronda de Dalt',
   'tile.jail.visit': 'Només de pas',
@@ -81,6 +86,16 @@ export const ca: Dict = {
   'card.f16': 'Trobes un bitllet a la sorra de la Barceloneta: cobra 10 €.',
 
   // ---- UI general ----
+  'home.title': 'Tria la teva ciutat',
+  'home.subtitle': 'El mateix joc, una ciutat nova per conquerir',
+  'home.new': 'Nou',
+  'home.soon': 'Aviat',
+  'home.soonToast': '{city} arriba molt aviat!',
+  'home.continue': 'Continua la partida a {city}',
+  'home.back': 'Ciutats',
+  'home.tag.bcn': 'Compra Barcelona, barri a barri',
+  'home.tag.roma': 'Compra Roma, barri a barri',
+  'home.tag.medellin': 'Compra Medellín, comuna a comuna',
   'app.title': 'BCN Tycoon',
   'app.tagline': 'Compra Barcelona, barri a barri',
   'ui.language': 'Idioma',

@@ -41,7 +41,7 @@ export function Lobby() {
     const text = t('online.shareText', { code: online.code })
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'BCN Tycoon', text, url })
+        await navigator.share({ title: t('app.title'), text, url })
         return
       }
     } catch {

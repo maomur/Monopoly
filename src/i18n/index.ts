@@ -1,5 +1,6 @@
 import { es, type I18nKey, type Dict } from './es'
 import { ca } from './ca'
+import { cityString } from '../cities'
 
 export type Lang = 'es' | 'ca'
 export type { I18nKey }
@@ -13,7 +14,7 @@ export function translate(
   vars?: Record<string, string | number>,
 ): string {
   const dict = DICTS[lang] as Record<string, string>
-  let s = dict[key] ?? (es as Record<string, string>)[key] ?? key
+  let s = cityString(lang, key) ?? dict[key] ?? (es as Record<string, string>)[key] ?? key
   if (vars) {
     for (const [k, v] of Object.entries(vars)) s = s.split(`{${k}}`).join(String(v))
   }
