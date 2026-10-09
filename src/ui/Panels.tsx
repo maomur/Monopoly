@@ -6,6 +6,7 @@ import { formatMoney, logText, tileName } from './format'
 import { AnimatedMoney } from './MoneyFx'
 import { TokenIcon } from './Token'
 import { useT } from './useT'
+import { BotBadge } from './BotLevel'
 
 function PropertyChips({ playerId }: { playerId: string }) {
   const game = useGame((s) => s.game)!
@@ -77,7 +78,7 @@ function PlayersList() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">
-                  {p.name} {p.isBot && <span aria-label="bot">🤖</span>}
+                  {p.name} {p.isBot && <BotBadge level={p.botLevel} />}
                   {myId === p.id && <span className="ml-1 text-xs font-normal opacity-70">({t('online.you')})</span>}
                   {active && <span className="ml-1 rounded bg-sol px-1.5 text-xs">{t('players.turn')}</span>}
                 </span>

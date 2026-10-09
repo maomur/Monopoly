@@ -1,6 +1,6 @@
 // Mensajes entre los móviles y el servidor de salas (compartido cliente/servidor).
 import type { Action } from '../engine/actions'
-import type { GameEvent, GameState, TokenId } from '../engine/state'
+import type { BotLevel, GameEvent, GameState, TokenId } from '../engine/state'
 
 export type QuickSetup = { type: 'none' } | { type: 'rounds'; limit: number } | { type: 'time'; minutes: number }
 
@@ -9,6 +9,7 @@ export interface Seat {
   name: string
   token: TokenId
   isBot: boolean
+  botLevel?: BotLevel
   /** ¿Tiene el móvil conectado ahora mismo? (los bots siempre cuentan como conectados) */
   connected: boolean
   /** Jugador de la partida que controla este asiento (p1…p4), cuando ya ha empezado */
@@ -28,7 +29,7 @@ export type ClientMsg =
   | { t: 'hello'; key: string; create: boolean }
   | { t: 'join'; name: string; token: TokenId }
   | { t: 'update'; name: string; token: TokenId }
-  | { t: 'addBot' }
+  | { t: 'addBot'; level?: BotLevel }
   | { t: 'removeSeat'; seatId: string }
   | { t: 'setQuick'; quick: QuickSetup }
   | { t: 'start' }

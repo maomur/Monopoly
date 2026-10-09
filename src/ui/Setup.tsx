@@ -7,6 +7,7 @@ import { onlineAvailable, roomFromUrl } from '../online/config'
 import { lastRoom } from '../online/identity'
 import { normalizeCode } from '../online/protocol'
 import { ActionButton } from './primitives'
+import { BotLevelPicker } from './BotLevel'
 import { TOKEN_LABEL_KEY, TokenIcon } from './Token'
 import { useT } from './useT'
 
@@ -165,6 +166,11 @@ export function Setup() {
                 ))}
               </div>
             </div>
+            {p.isBot && (
+              <div className="mt-2">
+                <BotLevelPicker value={p.botLevel ?? 'intermediate'} onChange={(l) => update(i, { botLevel: l })} />
+              </div>
+            )}
             <div className="mt-2 flex flex-wrap gap-1.5" role="radiogroup" aria-label={t('setup.token')}>
               {TOKENS.map((tok) => (
                 <button

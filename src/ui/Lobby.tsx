@@ -4,6 +4,8 @@ import { TOKENS, PLAYER_COLORS, type TokenId } from '../engine/state'
 import type { QuickSetup } from '../online/protocol'
 import { useGame } from '../store/gameStore'
 import { ActionButton } from './primitives'
+import { BotBadge, BotLevelPicker } from './BotLevel'
+import type { BotLevel } from '../engine/state'
 import { TOKEN_LABEL_KEY, TokenIcon } from './Token'
 import { useT } from './useT'
 
@@ -21,6 +23,7 @@ export function Lobby() {
   const me = room?.seats.find((s) => s.id === online.you) ?? null
   const isHost = !!me && room?.hostSeatId === me.id
   const [name, setName] = useState(me?.name ?? '')
+  const [botLevel, setBotLevel] = useState<BotLevel>('intermediate')
   const typing = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -103,7 +106,7 @@ export function Lobby() {
               {s.name}
               {s.id === me?.id && <span className="ml-1 text-sm font-normal opacity-70">({t('online.you')})</span>}
               {s.id === room.hostSeatId && <span className="ml-1" title={t('online.host')}>👑</span>}
-              {s.isBot && <span className="ml-1">🤖</span>}
+              {s.isBot && <BotBadge level={s.botLevel} />}
             </span>
             {!s.isBot && (
               <span
@@ -125,7 +128,10 @@ export function Lobby() {
         ))}
         {room && room.seats.length < 4 && isHost && (
           <li>
-            <ActionButton className="w-full" onClick={() => send({ t: 'addBot' })}>🤖 {t('online.addBot')}</ActionButton>
+            <div className="rounded-xl bg-white p-2 shadow-sm">
+              <BotLevelPicker value={botLevel} onChange={setBotLevel} />
+              <ActionButton className="mt-2 w-full" onClick={() => send({ t: 'addBot', level: botLevel })}>🤖 {t('online.addBot')}</ActionButton>
+            </div>
           </li>
         )}
       </ul>

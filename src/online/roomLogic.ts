@@ -139,6 +139,7 @@ export class RoomLogic {
           name: BOT_NAMES[bots % BOT_NAMES.length],
           token: this.freeToken(),
           isBot: true,
+          botLevel: msg.level ?? 'intermediate',
           connected: true,
           playerId: null,
         })
@@ -178,7 +179,7 @@ export class RoomLogic {
           seed: (Math.random() * 2 ** 32) >>> 0,
           now,
           quickMode: d.quick,
-          players: d.seats.map((s) => ({ name: s.name, token: s.token, isBot: s.isBot })),
+          players: d.seats.map((s) => ({ name: s.name, token: s.token, isBot: s.isBot, botLevel: s.botLevel })),
         })
         d.phase = 'playing'
         return { room: true, state: { game: d.game, events: [] } }

@@ -15,6 +15,8 @@ export interface Player {
   token: TokenId
   color: string
   isBot: boolean
+  /** Nivel del bot (sin nivel = intermedio, así las partidas guardadas siguen valiendo) */
+  botLevel?: BotLevel
   money: number
   position: number
   inJail: boolean
@@ -154,10 +156,14 @@ export interface GameState {
 
 export const STATE_VERSION = 1
 
+export type BotLevel = 'beginner' | 'intermediate' | 'expert'
+export const BOT_LEVELS: BotLevel[] = ['beginner', 'intermediate', 'expert']
+
 export interface PlayerSetup {
   name: string
   token: TokenId
   isBot: boolean
+  botLevel?: BotLevel
 }
 
 export interface GameSetup {
@@ -188,6 +194,7 @@ export function createGame(setup: GameSetup): GameState {
     token: p.token,
     color: PLAYER_COLORS[i],
     isBot: p.isBot,
+    ...(p.isBot ? { botLevel: p.botLevel ?? 'intermediate' } : {}),
     money: START_MONEY,
     position: 0,
     inJail: false,
