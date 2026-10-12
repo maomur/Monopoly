@@ -81,7 +81,7 @@ function CityCard({ city, savedHere }: { city: CityInfo; savedHere: boolean }) {
   const t = useT()
   const choose = useGame((s) => s.chooseCity)
   const showToast = useGame((s) => s.showToast)
-  const isNew = city.id === 'roma'
+  const isNew = city.id === 'roma' || city.id === 'medellin'
   return (
     <button
       type="button"

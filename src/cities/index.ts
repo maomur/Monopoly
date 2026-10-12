@@ -1,5 +1,6 @@
 import type { CityId, CityInfo } from './types'
 import { ROMA } from './roma'
+import { MEDELLIN } from './medellin'
 
 export type { CityId, CityInfo }
 
@@ -16,14 +17,8 @@ export const CITIES: CityInfo[] = [
     colors: { from: '#1572CF', to: '#073B73', accent: '#FFC930' },
   },
   ROMA,
-  {
-    id: 'medellin',
-    name: 'Medellín',
-    country: 'Colombia',
-    flag: '🇨🇴',
-    available: false,
-    colors: { from: '#2E8B57', to: '#0F4A2C', accent: '#FFD23F' },
-  },
+  MEDELLIN,
+
 ]
 
 export const cityInfo = (id: CityId): CityInfo => CITIES.find((c) => c.id === id) ?? CITIES[0]

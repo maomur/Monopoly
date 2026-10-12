@@ -35,6 +35,24 @@ describe('ciudades', () => {
     setActiveCity('bcn')
   })
 
+  it('Medellín tiene contenido completo y cartas propias', () => {
+    const own = [1, 3, 5, 6, 8, 9, 11, 12, 13, 14, 15, 16, 18, 19, 21, 23, 24, 25, 26, 27, 28, 29, 31, 32, 34, 35, 37, 39]
+    setActiveCity('bcn')
+    const bcn = own.map((i) => tileName('es', i))
+    setActiveCity('medellin')
+    own.forEach((i, k) => expect(tileName('es', i)).not.toBe(bcn[k]))
+    expect(tileName('es', 39)).toBe('El Poblado')
+    expect(tileShort('es', 10)).toBe('Regional')
+    expect(translate('es', 'app.title')).toBe('Medellín Tycoon')
+    expect(translate('ca', 'app.title')).toBe('Medellín Tycoon')
+    const keys = Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, '0')).flatMap((n) => [`card.s${n}`, `card.f${n}`])
+    const med = keys.map((k) => translate('es', k))
+    setActiveCity('bcn')
+    keys.forEach((k, i) => expect(med[i]).not.toBe(k))
+    expect(keys.filter((k, i) => med[i] !== translate('es', k)).length).toBeGreaterThan(15)
+    setActiveCity('bcn')
+  })
+
   it('la sala online juega en la ciudad de quien la crea', () => {
     const r = new RoomLogic('ROMAA')
     r.handle('k', { t: 'hello', key: 'k', create: true, city: 'roma' })

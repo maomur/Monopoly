@@ -15,6 +15,8 @@ export interface CityInfo {
   available: boolean
   /** Colores de la tarjeta del selector */
   colors: { from: string; to: string; accent: string }
+  /** Iconos propios de algunas casillas (índice → icono), p. ej. terminal de autobús en vez de puerto */
+  glyphs?: Record<number, string>
   /** Textos propios por idioma (el catalán cae al castellano si falta algo) */
   strings?: { es: CityStrings; ca?: CityStrings }
 }

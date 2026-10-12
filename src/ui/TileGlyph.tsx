@@ -1,3 +1,4 @@
+import { activeCity, cityInfo } from '../cities'
 // Iconos de trazo simple para las casillas que no son barrios.
 // Un solo grosor de línea y sin relleno salvo donde ayuda a reconocerlo.
 import { BOARD } from '../engine/board'
@@ -38,6 +39,21 @@ const GLYPHS: Record<string, React.ReactNode> = {
     <g {...S}>
       <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
       <path d="M7.5 16V8l4.5 6 4.5-6v8" />
+    </g>
+  ),
+  bus: (
+    <g {...S}>
+      <rect x="4" y="3.5" width="16" height="14" rx="3" />
+      <path d="M4 11h16M7 17.5v2.5M17 17.5v2.5" />
+      <circle cx="8" cy="14.3" r=".7" fill="currentColor" />
+      <circle cx="16" cy="14.3" r=".7" fill="currentColor" />
+    </g>
+  ),
+  cable: (
+    <g {...S}>
+      <path d="M2 5l20 4M12 7v4" />
+      <rect x="6.5" y="11" width="11" height="9" rx="2.5" />
+      <path d="M6.5 15h11" />
     </g>
   ),
   water: (
@@ -97,6 +113,8 @@ const GLYPHS: Record<string, React.ReactNode> = {
 /** Icono de la casilla o null si es un barrio (los barrios llevan banda de color) */
 export function glyphFor(index: number): string | null {
   const t = BOARD[index]
+  const own = cityInfo(activeCity()).glyphs?.[index]
+  if (own) return own
   switch (t.kind) {
     case 'transport':
       return index === 25 ? 'ship' : index === 35 ? 'plane' : 'train'

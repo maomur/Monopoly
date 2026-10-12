@@ -108,8 +108,63 @@ const ROMA_PATHS: Partial<Record<TokenId, React.ReactNode>> = {
   ),
 }
 
+/** Fichas de Medellín (el tranvía se comparte) */
+const MEDELLIN_PATHS: Partial<Record<TokenId, React.ReactNode>> = {
+  // Silleta: tablero de flores con correas
+  sagrada: (
+    <g fill="currentColor">
+      <circle cx="7" cy="6" r="2.6" />
+      <circle cx="12" cy="4.5" r="2.8" />
+      <circle cx="17" cy="6" r="2.6" />
+      <circle cx="9.5" cy="9" r="2.4" />
+      <circle cx="14.5" cy="9" r="2.4" />
+      <path fillRule="evenodd" d="M4 11 H20 V20 H4Z M6.5 13 H17.5 V14.5 H6.5Z M6.5 16.5 H17.5 V18 H6.5Z" />
+      <path d="M6 20 L5 23 M18 20 L19 23" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </g>
+  ),
+  // Cabina del Metrocable colgando del cable
+  patinete: (
+    <g fill="currentColor">
+      <path d="M1 4 L23 1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <rect x="11" y="2.5" width="2" height="5" />
+      <path fillRule="evenodd" d="M5 9 Q5 7.5 6.5 7.5 H17.5 Q19 7.5 19 9 V20 Q19 21.5 17.5 21.5 H6.5 Q5 21.5 5 20Z M7 10 H11.2 V14.5 H7Z M12.8 10 H17 V14.5 H12.8Z" />
+    </g>
+  ),
+  // Orquídea: cinco pétalos y labelo
+  gaviota: (
+    <g fill="currentColor">
+      <ellipse cx="12" cy="5.5" rx="3" ry="4.5" />
+      <ellipse cx="5.5" cy="11" rx="4.5" ry="2.8" transform="rotate(-20 5.5 11)" />
+      <ellipse cx="18.5" cy="11" rx="4.5" ry="2.8" transform="rotate(20 18.5 11)" />
+      <ellipse cx="8" cy="17" rx="2.6" ry="4" transform="rotate(30 8 17)" />
+      <ellipse cx="16" cy="17" rx="2.6" ry="4" transform="rotate(-30 16 17)" />
+      <path d="M12 10 Q15 13 12 18 Q9 13 12 10Z" fill="#fff" opacity=".85" />
+    </g>
+  ),
+  // Arepa con marcas de la parrilla
+  castell: (
+    <g fill="currentColor">
+      <path fillRule="evenodd" d="M12 4 A9 8 0 1 1 11.99 4Z M7 9 L10 7 L10.8 8.2 L7.8 10.2Z M8 14 L14 10 L14.8 11.2 L8.8 15.2Z M11 17 L17 13 L17.8 14.2 L11.8 18.2Z" />
+    </g>
+  ),
+  // Taza de tinto humeante
+  panot: (
+    <g fill="currentColor">
+      <path d="M8 2 Q6 4 8 6 M12 2 Q10 4 12 6" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      <path d="M3.5 8 H17 V15 Q17 20 10.25 20 Q3.5 20 3.5 15Z" />
+      <path fillRule="evenodd" d="M16 10 H18.5 Q21.5 10 21.5 13 Q21.5 16 18.5 16 H16 V14 H18.5 Q19.5 14 19.5 13 Q19.5 12 18.5 12 H16Z" />
+      <rect x="2" y="20.5" width="17" height="2" rx="1" />
+    </g>
+  ),
+}
+
+const CITY_PATHS: Partial<Record<string, Partial<Record<TokenId, React.ReactNode>>>> = {
+  roma: ROMA_PATHS,
+  medellin: MEDELLIN_PATHS,
+}
+
 export function TokenIcon({ token, className }: { token: TokenId; className?: string }) {
-  const path = (activeCity() === 'roma' && ROMA_PATHS[token]) || PATHS[token]
+  const path = CITY_PATHS[activeCity()]?.[token] ?? PATHS[token]
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
       {path}
