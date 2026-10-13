@@ -126,15 +126,40 @@ export function Lobby() {
             )}
           </li>
         ))}
-        {room && room.seats.length < 4 && isHost && (
-          <li>
-            <div className="rounded-xl bg-white p-2 shadow-sm">
-              <BotLevelPicker value={botLevel} onChange={setBotLevel} />
-              <ActionButton className="mt-2 w-full" onClick={() => send({ t: 'addBot', level: botLevel })}>🤖 {t('online.addBot')}</ActionButton>
-            </div>
-          </li>
-        )}
+        {room &&
+          Array.from({ length: Math.max(0, 4 - room.seats.length) }, (_, k) => (
+            <li key={`free${k}`} className="flex min-h-[3.25rem] items-center gap-2 rounded-xl border-2 border-dashed border-ink/20 p-2">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink/5 text-lg opacity-60">+</span>
+              <span className="min-w-0 flex-1 truncate">
+                <span className="font-semibold opacity-70">{t('online.freeSeat')}</span>
+                {!isHost && <span className="ml-1 text-sm opacity-55">{t('online.freeSeatWait')}</span>}
+              </span>
+              {isHost && (
+                <button
+                  type="button"
+                  onClick={() => send({ t: 'addBot', level: botLevel })}
+                  className="shrink-0 whitespace-nowrap rounded-full bg-mar px-3 py-2 text-sm font-semibold text-white"
+                >
+                  🤖 {t('online.addBot')}
+                </button>
+              )}
+            </li>
+          ))}
       </ul>
+      {room && room.seats.length < 4 && isHost && (
+        <section className="mt-3 rounded-xl bg-white p-3 shadow-sm">
+          <p className="mb-2 font-semibold">{t('online.botsTitle')}</p>
+          <BotLevelPicker value={botLevel} onChange={setBotLevel} />
+          <ActionButton
+            className="mt-2 w-full"
+            onClick={() => {
+              for (let i = room.seats.length; i < 4; i++) send({ t: 'addBot', level: botLevel })
+            }}
+          >
+            🤖 {t('online.fillBots', { n: 4 - room.seats.length })}
+          </ActionButton>
+        </section>
+      )}
 
       {/* Mi nombre y ficha */}
       {me && (
