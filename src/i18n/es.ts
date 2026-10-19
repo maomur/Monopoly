@@ -94,6 +94,7 @@ export const es = {
   'home.tag.bcn': 'Compra Barcelona, barrio a barrio',
   'home.tag.roma': 'Compra Roma, barrio a barrio',
   'home.tag.medellin': 'Compra Medellín, comuna a comuna',
+  'home.tag.buenosaires': 'Compra Buenos Aires, barrio a barrio',
   'app.title': 'BCN Tycoon',
   'app.tagline': 'Compra Barcelona, barrio a barrio',
   'ui.language': 'Idioma',

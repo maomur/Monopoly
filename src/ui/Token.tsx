@@ -158,9 +158,57 @@ const MEDELLIN_PATHS: Partial<Record<TokenId, React.ReactNode>> = {
   ),
 }
 
+/** Fichas de Buenos Aires (el tranvía se comparte) */
+const BUENOSAIRES_PATHS: Partial<Record<TokenId, React.ReactNode>> = {
+  // Obelisco con su ventanita
+  sagrada: (
+    <g fill="currentColor">
+      <path fillRule="evenodd" d="M9.5 21 L11 5 L12 1.5 L13 5 L14.5 21Z M11.4 6.5 H12.6 V8.3 H11.4Z" />
+      <rect x="6" y="20.5" width="12" height="2.5" rx="1" />
+    </g>
+  ),
+  // Colectivo de frente-lado, con ventanas recortadas
+  patinete: (
+    <g fill="currentColor">
+      <path fillRule="evenodd" d="M2 7 Q2 5 4 5 H19 Q22 5 22 9 V17 H2Z M4 7.5 H8 V11.5 H4Z M9.5 7.5 H13.5 V11.5 H9.5Z M15 7.5 H20 V11.5 H15Z" />
+      <circle cx="6.5" cy="18" r="2.3" />
+      <circle cx="17.5" cy="18" r="2.3" />
+    </g>
+  ),
+  // Bandoneón: dos tapas y el fuelle en zigzag
+  gaviota: (
+    <g fill="currentColor">
+      <rect x="1.5" y="6" width="5" height="12" rx="1.2" />
+      <rect x="17.5" y="6" width="5" height="12" rx="1.2" />
+      <path d="M6.5 7 L8.75 17 L11 7 L13.25 17 L15.5 7 L17.5 17" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinejoin="round" />
+      <path d="M6.5 7 H17.5 M6.5 17 H17.5" stroke="currentColor" strokeWidth="1.2" />
+    </g>
+  ),
+  // Mate con bombilla
+  castell: (
+    <g fill="currentColor">
+      <path d="M14 9 L18.5 1.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M5 9 H17 Q19 13 17 17 Q15.5 21 11 21 Q6.5 21 5 17 Q3 13 5 9Z" />
+      <rect x="4.5" y="7.5" width="13" height="2.2" rx="1" />
+      <rect x="7.5" y="20" width="7" height="2.5" rx="1" />
+    </g>
+  ),
+  // Empanada con repulgue
+  panot: (
+    <g fill="currentColor">
+      <path d="M2 16 Q2 6 12 6 Q22 6 22 16Z" />
+      <rect x="2" y="15.5" width="20" height="3" rx="1.5" />
+      {[4, 7, 10, 13, 16, 19].map((x) => (
+        <circle key={x} cx={x + 0.5} cy="17" r="0.8" fill="#fff" opacity=".8" />
+      ))}
+    </g>
+  ),
+}
+
 const CITY_PATHS: Partial<Record<string, Partial<Record<TokenId, React.ReactNode>>>> = {
   roma: ROMA_PATHS,
   medellin: MEDELLIN_PATHS,
+  buenosaires: BUENOSAIRES_PATHS,
 }
 
 export function TokenIcon({ token, className }: { token: TokenId; className?: string }) {

@@ -1,6 +1,7 @@
 import type { CityId, CityInfo } from './types'
 import { ROMA } from './roma'
 import { MEDELLIN } from './medellin'
+import { BUENOSAIRES } from './buenosaires'
 
 export type { CityId, CityInfo }
 
@@ -18,7 +19,7 @@ export const CITIES: CityInfo[] = [
   },
   ROMA,
   MEDELLIN,
-
+  BUENOSAIRES,
 ]
 
 export const cityInfo = (id: CityId): CityInfo => CITIES.find((c) => c.id === id) ?? CITIES[0]

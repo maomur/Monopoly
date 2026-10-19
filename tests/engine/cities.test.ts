@@ -53,6 +53,21 @@ describe('ciudades', () => {
     setActiveCity('bcn')
   })
 
+  it('Buenos Aires tiene contenido completo y cartas propias', () => {
+    const own = [1, 3, 5, 6, 8, 9, 11, 12, 13, 14, 15, 16, 18, 19, 21, 23, 24, 25, 26, 27, 28, 29, 31, 32, 34, 35, 37, 39]
+    setActiveCity('bcn')
+    const bcn = own.map((i) => tileName('es', i))
+    setActiveCity('buenosaires')
+    own.forEach((i, k) => expect(tileName('es', i)).not.toBe(bcn[k]))
+    expect(tileName('es', 39)).toBe('Puerto Madero')
+    expect(tileShort('es', 10)).toBe('General Paz')
+    expect(translate('ca', 'app.title')).toBe('Buenos Aires Tycoon')
+    const keys = Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, '0')).flatMap((n) => [`card.s${n}`, `card.f${n}`])
+    const ba = keys.map((k) => translate('es', k))
+    setActiveCity('bcn')
+    expect(keys.filter((k, i) => ba[i] !== translate('es', k)).length).toBeGreaterThan(25)
+  })
+
   it('la sala online juega en la ciudad de quien la crea', () => {
     const r = new RoomLogic('ROMAA')
     r.handle('k', { t: 'hello', key: 'k', create: true, city: 'roma' })

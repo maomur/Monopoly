@@ -108,10 +108,10 @@ export function Setup() {
       </button>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-4xl font-bold text-mar">{t('app.title')}</h1>
+          <h1 className="font-display text-4xl font-bold leading-tight max-[400px]:text-3xl text-mar">{t('app.title')}</h1>
           <p className="text-terracota">{t('app.tagline')}</p>
         </div>
-        <LangToggle />
+        <div className="shrink-0"><LangToggle /></div>
       </div>
 
       {onlineAvailable() && <OnlineCard name={players[0].name} token={players[0].token} />}

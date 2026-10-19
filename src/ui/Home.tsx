@@ -58,6 +58,31 @@ function Skyline({ id }: { id: CityId }) {
       </svg>
     )
   }
+  if (id === 'buenosaires') {
+    return (
+      <svg {...common}>
+        <path d="M0 70 V60 H200 V70Z" fill="#fff" opacity=".18" />
+        {/* Edificios y cúpula del Congreso */}
+        <g fill="#fff" opacity=".55">
+          <rect x="18" y="38" width="16" height="22" rx="2" />
+          <rect x="37" y="46" width="20" height="14" rx="2" />
+          <path d="M128 60 V44 H160 V60Z" />
+          <path d="M134 44 Q134 28 144 28 Q154 28 154 44Z" />
+          <rect x="142.5" y="20" width="3" height="9" rx="1" />
+          <rect x="166" y="42" width="12" height="18" rx="2" />
+          <rect x="181" y="50" width="14" height="10" rx="2" />
+        </g>
+        {/* Obelisco */}
+        <g fill="#fff" opacity=".95">
+          <path d="M93 60 L96 12 L100 4 L104 12 L107 60Z" />
+          <rect x="86" y="56" width="28" height="4" rx="1.5" />
+        </g>
+        <rect x="98.6" y="18" width="2.8" height="3.5" rx=".6" fill="#17507F" opacity=".7" />
+        {/* Río de la Plata */}
+        <path d="M0 64 Q10 61 20 64 T40 64 T60 64 T80 64 T100 64 T120 64 T140 64 T160 64 T180 64 T200 64" stroke="#fff" strokeWidth="1.5" fill="none" opacity=".5" />
+      </svg>
+    )
+  }
   return (
     <svg {...common}>
       {/* Montañas y metrocable */}
@@ -81,7 +106,7 @@ function CityCard({ city, savedHere }: { city: CityInfo; savedHere: boolean }) {
   const t = useT()
   const choose = useGame((s) => s.chooseCity)
   const showToast = useGame((s) => s.showToast)
-  const isNew = city.id === 'roma' || city.id === 'medellin'
+  const isNew = city.id === 'buenosaires'
   return (
     <button
       type="button"

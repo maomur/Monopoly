@@ -96,6 +96,7 @@ export const ca: Dict = {
   'home.tag.bcn': 'Compra Barcelona, barri a barri',
   'home.tag.roma': 'Compra Roma, barri a barri',
   'home.tag.medellin': 'Compra Medellín, comuna a comuna',
+  'home.tag.buenosaires': 'Compra Buenos Aires, barri a barri',
   'app.title': 'BCN Tycoon',
   'app.tagline': 'Compra Barcelona, barri a barri',
   'ui.language': 'Idioma',
